@@ -27,10 +27,7 @@ template < typename T > FSMStateRecoveryStand< T >::FSMStateRecoveryStand( Contr
     // goal configuration
     // Folding
     for ( size_t i( 0 ); i < 4; ++i )
-        if ( this->data_->quadruped->robot_type_ == RobotType::CYBERDOG2 )
             fold_jpos[ i ] << -0.0f, -1.38f, 2.5f;
-        else
-            fold_jpos[ i ] << -0.0f, -1.4f, 2.4f;
 
     T L1           = this->data_->quadruped->hip_link_length_;
     T L2           = this->data_->quadruped->knee_link_length_;
@@ -775,11 +772,13 @@ template < typename T > void FSMStateRecoveryStand< T >::FoldLegs( const int& cu
                     max_diff = diff;
             }
         if ( max_diff < 30 / 57.3 )
-            fold_ramp_iter_ = 501;
+            fold_ramp_iter_ = 1000;
         else if ( max_diff < 100 / 57.3 )
-            fold_ramp_iter_ = 801;
+            fold_ramp_iter_ = 2000;
         else if ( max_diff < 180 / 57.3 )
-            fold_ramp_iter_ = 999;
+            fold_ramp_iter_ = 3000;
+        else if ( max_diff < 360 / 57.3 )
+            fold_ramp_iter_ = 3000;
     }
 
     for ( int i( 0 ); i < 4; ++i ) {
@@ -1201,8 +1200,8 @@ template < typename T > void FSMStateRecoveryStand< T >::JointPdControl( int leg
     auto& leg_ctrl = this->data_->leg_controller;
 
     if ( this->data_->quadruped->robot_type_ == RobotType::CYBERDOG2 ) {
-        leg_ctrl->commands_[ leg ].kp_joint << 60, 0, 0, 0, 80, 0, 0, 0, 60;
-        leg_ctrl->commands_[ leg ].kd_joint << 2.5, 0, 0, 0, 2, 0, 0, 0, 1.5;
+        leg_ctrl->commands_[ leg ].kp_joint << 100, 0, 0, 0, 100, 0, 0, 0, 100;
+        leg_ctrl->commands_[ leg ].kd_joint << 2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5;
     }
     else {
         leg_ctrl->commands_[ leg ].kp_joint << 100, 0, 0, 0, 100, 0, 0, 0, 120;

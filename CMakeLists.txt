@@ -19,19 +19,11 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(BUILD_TYPE_RELEASE TRUE)
 set(CMAKE_CXX_STANDARD 14)
 
-# 构建选项
-option(BUILD_CYBERDOG2 "Build for hotdog or hotdog2" ON)
-option(BUILD_SIMULATOR "Build simulator" ON)
-option(BUILD_HARDWARE "Build hot dog hardware driver" ON)
-option(BUILD_CONTROL "Build hot dog controller" ON)
 option(ONBOARD_BUILD "Use compiler flags for computer on robot" OFF)
 option(BUILD_FACTORY "Build production test tools for factory" OFF)
 option(BUILD_ROS "Build hot dog for ROS2" ON)
 
-# 宏定义
-if(BUILD_CYBERDOG2)
-  add_compile_definitions(BUILD_CYBERDOG2=1)
-endif()
+
 
 # 识别处理器架构
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64.*|x86_64.*|AMD64.*")
@@ -197,28 +189,7 @@ if(control_sources)
 endif()
 
 add_subdirectory(control/third_party)
-# add_subdirectory(control/user) # 已经用GLOB方式加进去了，无需再加
 
-# =================== hotdog_control可执行文件 ===================
-add_executable(hotdog_control control/user/main.cpp control/user/sub_main.cpp)
-target_include_directories(hotdog_control PUBLIC "./")
-
-if(ONBOARD_BUILD)
-  target_include_directories(hotdog_control PUBLIC "${CMAKE_SOURCE_DIR}/hardware/include")
-  target_link_libraries(hotdog_control hardware control)
-else()
-  target_include_directories(hotdog_control PUBLIC "${CMAKE_SOURCE_DIR}/simbridge/include")
-  target_link_libraries(hotdog_control control)
-endif()
-
-if(CMAKE_SYSTEM_NAME MATCHES Linux)
-  target_link_libraries(hotdog_control rt)
-endif()
-
-if(BUILD_ROS)
-  ament_target_dependencies(hotdog_control controller_interface nav_msgs)
-  install(TARGETS hotdog_control RUNTIME DESTINATION lib/hotdog_controller)
-endif()
 
 # =================== 其它子目录管理 ===================
 if(ONBOARD_BUILD)
@@ -243,7 +214,7 @@ if(ONBOARD_BUILD AND BUILD_FACTORY)
 
   add_dependencies(run_pack_script
     version
-    hotdog_control
+    # hotdog_control
     manager
     ${TEST_TARGETS}
   )
@@ -306,12 +277,7 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
-
 endif()
-
-
-
 
 # =================== 安装 launch 和 config 目录 ===================
 if(BUILD_ROS)
@@ -325,7 +291,3 @@ if(BUILD_ROS)
 endif()
 
 
-# # for ROS2 colcon build
-# if(BUILD_ROS)
-#   ament_package()
-# endif()

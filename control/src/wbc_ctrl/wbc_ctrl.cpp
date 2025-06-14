@@ -83,7 +83,7 @@ template < typename T > void WbcCtrl< T >::Run( void* input, ControlFsmData< T >
     UpdateLegCmd( data );
 
     // LCM publish
-    LcmPublishData( data );
+    // LcmPublishData( data );
 }
 
 template < typename T > void WbcCtrl< T >::RunVirtual( void* input, ControlFsmData< T >& data ) {
@@ -113,7 +113,7 @@ template < typename T > void WbcCtrl< T >::RunVirtual( void* input, ControlFsmDa
     // UpdateLegCmd(data);
 
     // LCM publish
-    LcmPublishData( data );
+    // LcmPublishData( data );
 }
 
 template < typename T > void WbcCtrl< T >::UpdateLegCmd( ControlFsmData< T >& data ) {

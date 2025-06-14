@@ -3,7 +3,6 @@
 #include "wbc_ctrl/task_set/body_orientation_task.hpp"
 #include "wbc_ctrl/task_set/body_position_task.hpp"
 #include "wbc_ctrl/task_set/link_position_task.hpp"
-#include <glog/logging.h>
 
 template < typename T > LocomotionCtrl< T >::LocomotionCtrl( FloatingBaseModel< T > model ) : WbcCtrl< T >( model ) {
     body_pos_task_ = new BodyPosTask< T >( &( WBCtrl::model_ ) );
@@ -248,29 +247,6 @@ template < typename T > void LocomotionCtrl< T >::LcmPublishData( ControlFsmData
         WBCtrl::wbc_data_lcm_.body_ori[ i ]     = WBCtrl::state_.body_orientation[ i ];  // WBCtrl::state_.rpy[ i ];
         WBCtrl::wbc_data_lcm_.body_ang_vel[ i ] = WBCtrl::state_.body_velocity[ i ];
     }
-
-    
-    std::cout << "Front Right Foot (kFr) pGC_: ("
-        << WBCtrl::model_.pGC_[linkID::kFr][0] << ", "
-        << WBCtrl::model_.pGC_[linkID::kFr][1] << ", "
-        << WBCtrl::model_.pGC_[linkID::kFr][2] << ")" << std::endl;
-    
-    std::cout << "Front Left Foot (kFl) pGC_: ("
-        << WBCtrl::model_.pGC_[linkID::kFl][0] << ", "
-        << WBCtrl::model_.pGC_[linkID::kFl][1] << ", "
-        << WBCtrl::model_.pGC_[linkID::kFl][2] << ")" << std::endl;
-    
-    std::cout << "Hind Right Foot (kHr) pGC_: ("
-        << WBCtrl::model_.pGC_[linkID::kHr][0] << ", "
-        << WBCtrl::model_.pGC_[linkID::kHr][1] << ", "
-        << WBCtrl::model_.pGC_[linkID::kHr][2] << ")" << std::endl;
-    
-    std::cout << "Hind Left Foot (kHl) pGC_: ("
-        << WBCtrl::model_.pGC_[linkID::kHl][0] << ", "
-        << WBCtrl::model_.pGC_[linkID::kHl][1] << ", "
-        << WBCtrl::model_.pGC_[linkID::kHl][2] << ")" << std::endl;
-    
-
     WBCtrl::wbc_data_lcm_.body_ori_cmd[ 3 ] = quat_des_[ 3 ];
     WBCtrl::wbc_data_lcm_.body_ori[ 3 ]     = WBCtrl::state_.body_orientation[ 3 ];
     // TODO: delete lcm publish , for independent thread to publish

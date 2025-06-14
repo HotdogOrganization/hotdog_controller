@@ -82,6 +82,12 @@ controller_interface::CallbackReturn NewRobotController::on_configure(
     get_node()->create_subscription<std_msgs::msg::String>(
       tita_topic::manager_key_command, rclcpp::SensorDataQoS().reliable(),
       std::bind(&NewRobotController::fsm_goal_cb, this, std::placeholders::_1));
+
+  joy_subscription_ =
+    get_node()->create_subscription<sensor_msgs::msg::Joy>(
+      tita_topic::manager_hotdog_key, rclcpp::SensorDataQoS().reliable(),
+      std::bind(&NewRobotController::joy_cb, this, std::placeholders::_1));
+
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
   odom_timer_ = get_node()->create_wall_timer(
     std::chrono::milliseconds(100), std::bind(&NewRobotController::odom_cb, this));
@@ -264,6 +270,26 @@ void NewRobotController::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr m
 
 void NewRobotController::posestamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
   (void)msg;
+  // RCLCPP_INFO(get_node()->get_logger(), 
+  // "Received PoseStamped: position(x: %f, y: %f, z: %f), orientation(x: %f, y: %f, z: %f, w: %f)",
+  // msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
+  // msg->pose.orientation.x, msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w);
+
+  tf2::Quaternion q(
+    msg->pose.orientation.x,
+    msg->pose.orientation.y,
+    msg->pose.orientation.z,
+    msg->pose.orientation.w
+  );
+
+  // 将四元数转换为RPY
+  double roll, pitch, yaw;
+  tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+  // 打印转换后的RPY值
+  // RCLCPP_INFO(get_node()->get_logger(), 
+  //   "Converted RPY: roll: %f, pitch: %f, yaw: %f", 
+  //   roll, pitch, yaw);
   // auto cmd = controlData_->state_command->rc_command_;
   // cmd->pose_position_[Y] = msg->pose.position.y;
   // cmd->pose_position_[Z] = msg->pose.position.z;
@@ -289,6 +315,13 @@ void NewRobotController::fsm_goal_cb(
     mode_ = 5;
   else
     mode_ = 0;
+}
+
+void NewRobotController::joy_cb(
+  const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+  joy_data_.axes = msg->axes;
+  joy_data_.buttons = msg->buttons;
 }
 
 void NewRobotController::odom_cb()
@@ -346,28 +379,6 @@ void NewRobotController::mainLoopThread()
     id++;
   }
 
-
-  // float pos_tmp[4] = {0.}, vel_tmp[4] = {0.};
-  // for(int i = 0; i < 4; i++) {
-  //   pos_tmp[i] = motor_pos_[i];
-  //   vel_tmp[i] = motor_vel_[i];
-  //   motor_pos_[i] = motor_pos_[3+i];
-  //   motor_vel_[i] = motor_vel_[3+i];
-  //   motor_pos_[3+i] = pos_tmp[i];
-  //   motor_vel_[3+i] = vel_tmp[i];
-  // }
-  // simulation_bridge_->bridge_->spi_data_.q_abad[0] = 0;
-//   for(int leg = 0; leg < 4; leg++) {
-//     simulation_bridge_->bridge_->spi_data_.q_abad[leg]  = motor_pos_[leg * 3 + 0];
-//     simulation_bridge_->bridge_->spi_data_.q_hip[leg]   = motor_pos_[leg * 3 + 1];
-//     simulation_bridge_->bridge_->spi_data_.q_knee[leg]  = motor_pos_[leg * 3 + 2];
-//     simulation_bridge_->bridge_->spi_data_.qd_abad[leg] = motor_vel_[leg * 3 + 0];
-//     simulation_bridge_->bridge_->spi_data_.qd_hip[leg]  = motor_vel_[leg * 3 + 1];
-//     simulation_bridge_->bridge_->spi_data_.qd_knee[leg] = motor_vel_[leg * 3 + 2];
-// }
-
-
-
   quat_[0] = imu_sensor_->get_orientation()[3];
   for(size_t id = 0; id < 3; id++) {
     quat_[id + 1] = imu_sensor_->get_orientation()[id];
@@ -408,8 +419,49 @@ void NewRobotController::mainLoopThread()
     simulation_bridge_initialized_ = true;
   }
   // 后续直接调用
+  SpiCommand spi_command_;
+  float abad_effort[4],hip_effort[4],knee_effort[4];
   if (simulation_bridge_) {
-    simulation_bridge_->Run(motor_pos_, motor_vel_, quat_, gyro_, accl_);
+    simulation_bridge_->Run(motor_pos_, motor_vel_, torque_, quat_, gyro_, accl_, spi_command_,joy_data_);
+    static int count = 0; // 在函数外或者类成员变量中声明，确保每次循环时不会被重置
+
+    // 在周期循环函数内
+    if (count < 1000)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+          abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) +
+                              1.5 * (0 - motor_vel_[i*3+0]) 
+                              + spi_command_.tau_abad_ff[i];
+      
+          hip_effort[i] = 60 * (-1.5 - (-motor_pos_[i*3+1])) +
+                              1.5 * (0 - (-motor_vel_[i*3+1]))
+                              + spi_command_.tau_hip_ff[i];
+      
+          knee_effort[i] = 60 * (2.7 - (-motor_pos_[i*3+2])) +
+                              1.5 * (0 - (-motor_vel_[i*3+2]))
+                              + spi_command_.tau_knee_ff[i];
+        }
+        count++;
+    }
+    else
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            abad_effort[i] = spi_command_.kp_abad[i] * (spi_command_.q_des_abad[i] - motor_pos_[i*3+0]) +
+                              spi_command_.kd_abad[i] * (0 - motor_vel_[i*3+0]) +
+                              spi_command_.tau_abad_ff[i];
+
+            hip_effort[i] = spi_command_.kp_hip[i] * (spi_command_.q_des_hip[i] - (-motor_pos_[i*3+1])) +
+                            spi_command_.kd_hip[i] * (0 - (-motor_vel_[i*3+1])) +
+                            spi_command_.tau_hip_ff[i];
+
+            knee_effort[i] = spi_command_.kp_knee[i] * (spi_command_.q_des_knee[i] - (-motor_pos_[i*3+2])) +
+                              spi_command_.kd_knee[i] * (0 - (-motor_vel_[i*3+2])) +
+                              spi_command_.tau_knee_ff[i];
+        }
+    }
+
   }
 
 
@@ -439,18 +491,13 @@ void NewRobotController::mainLoopThread()
     }
   }
 
-  torque_[0] = 0;
-  torque_[1] = 0;
-  torque_[2] = 0;
-  torque_[3] = 0;
-  torque_[4] = 0;
-  torque_[5] = 0;
-  torque_[6] = 0;
-  torque_[7] = 0;
-  torque_[8] = 0;
-  torque_[9] = 0; 
-  torque_[10] = 0;
-  torque_[11] = 0;
+
+for (int i = 0; i < 4; ++i) {
+    torque_[i * 3 + 0] = abad_effort[i];
+    torque_[i * 3 + 1] = -hip_effort[i];
+    torque_[i * 3 + 2] = -knee_effort[i];
+
+}
   // torque_[12] = 0; 
   // Update torque
   for (uint id = 0; id < joints_.size(); id++) {
@@ -461,28 +508,6 @@ void NewRobotController::mainLoopThread()
 
   // TODO：debug infomation
   static int count = 0;
-  // if(count % 500 == 0){
-
-  //   std::ostringstream joint_pos_stream;
-  //   joint_pos_stream << "joint pos: ";
-  //   for (uint id = 0; id < joints_.size(); id++){
-  //     joint_pos_stream << std::fixed << std::setprecision(3) << motor_pos_[id] << " ";
-  //   }
-  //   RCLCPP_INFO(get_node()->get_logger(), "%s", joint_pos_stream.str().c_str());
-  
-  //   printf("\n");
-  //   RCLCPP_INFO(get_node()->get_logger(), "acc %f",imu_sensor_->get_linear_acceleration()[0]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "acc %f",imu_sensor_->get_linear_acceleration()[1]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "acc %f",imu_sensor_->get_linear_acceleration()[2]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "gyro %f",imu_sensor_->get_angular_velocity()[0]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "gyro %f",imu_sensor_->get_angular_velocity()[1]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "gyro %f",imu_sensor_->get_angular_velocity()[2]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "quat %f",imu_sensor_->get_orientation()[0]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "quat %f",imu_sensor_->get_orientation()[1]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "quat %f",imu_sensor_->get_orientation()[2]);
-  //   RCLCPP_INFO(get_node()->get_logger(), "quat %f",imu_sensor_->get_orientation()[3]);
-  //   // RCLCPP_INFO(get_node()->get_logger(), "mode %d",mode_);
-  // }
   if(count % 400 == 0){
     RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
   // RCLCPP_DEBUG(get_node()->get_logger(), "\n### MPC Benchmarking");

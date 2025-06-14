@@ -1,6 +1,5 @@
 #include "fsm_states/fsm_state_passive.hpp"
 
-
 /**
  * @brief Constructor for the FSM State that passes in state specific info to
  *        the generic FSM State constructor.
@@ -46,22 +45,22 @@ template < typename T > void FsmStatePassive< T >::Run() {
     this->data_->leg_controller->ZeroCommand();
     this->data_->leg_controller->legs_enabled_ = true;
     TestTransition();
-    wbc_ctrl_->SetFloatingBaseWeight( 1000. );
-    wbc_data_->body_pos_des.setZero();
-    wbc_data_->body_vel_des.setZero();
-    wbc_data_->body_acc_des.setZero();
-    wbc_data_->body_rpy_des.setZero();
-    wbc_data_->body_omg_des.setZero();
+    // wbc_ctrl_->SetFloatingBaseWeight( 1000. );
+    // wbc_data_->body_pos_des.setZero();
+    // wbc_data_->body_vel_des.setZero();
+    // wbc_data_->body_acc_des.setZero();
+    // wbc_data_->body_rpy_des.setZero();
+    // wbc_data_->body_omg_des.setZero();
 
-    wbc_data_->contact_state.setZero();
+    // wbc_data_->contact_state.setZero();
 
-    for (int i = 0; i < 4; ++i) {
-        wbc_data_->foot_pos_des[i].setZero();
-        wbc_data_->foot_vel_des[i].setZero();
-        wbc_data_->foot_acc_des[i].setZero();
-        wbc_data_->reaction_force_des[i].setZero();
-    }
-    wbc_ctrl_->Run( wbc_data_, *this->data_ );
+    // for (int i = 0; i < 4; ++i) {
+    //     wbc_data_->foot_pos_des[i].setZero();
+    //     wbc_data_->foot_vel_des[i].setZero();
+    //     wbc_data_->foot_acc_des[i].setZero();
+    //     wbc_data_->reaction_force_des[i].setZero();
+    // }
+    // wbc_ctrl_->Run( wbc_data_, *this->data_ );
     // fuck_test.
     // LOG(INFO) << "fuck you fsm!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1" ;
     // wbc_ctrl_->Up;

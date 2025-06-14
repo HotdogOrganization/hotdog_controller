@@ -181,7 +181,7 @@ void SimulationBridge::RunRobotControl() {
         robot_runner_->Init();
         first_controller_run_ = false;
     }
-    // cmd_interface_.ProcessGamepadCommand( gamepadCommand; );
+    cmd_interface_.ProcessGamepadCommand( gamepadCommand);
 
     robot_runner_->Run();
     // robot_runner_->LCMPublishByThread();

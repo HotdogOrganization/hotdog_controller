@@ -15,7 +15,12 @@ class SimulationBridgeInterface {
 public:
     explicit SimulationBridgeInterface( RobotType robot, RobotController* robot_ctrl );
     ~SimulationBridgeInterface();
-    void Run(const float* motor_pos, const float* motor_vel, const float* quat, const float* gyro, const float* accl);
+    struct JoyData {
+        std::vector<float> axes;
+        std::vector<int32_t> buttons;
+      };
+
+    void Run(const float* motor_pos, const float* motor_vel, const float* motor_tor, const float* quat, const float* gyro, const float* accl, SpiCommand &spi_command_,JoyData &joydata);
     void HandleControlParameters();
     void RunRobotControl();
 

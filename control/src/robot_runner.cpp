@@ -119,52 +119,12 @@ void RobotRunner::RunTask() {
         UnresponceSaftyCheck();
         auto cmd = cmd_interface_->GetCommand();
 
-        // if ( control_parameters_->use_rc == 1 and cmd.mode == MotionMode::kOff ) {
-        //     LOG(INFO) << "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" ;
-
-        //     if ( count_ini % 1000 == 0 ) {
-        //         using clock = std::chrono::system_clock;
-        //         auto tt     = clock::to_time_t( clock::now() );
-        //         std::cout << "ESTOP " << ctime( &tt );
-        //     }
-        //     for ( int leg = 0; leg < 4; leg++ ) {
-        //         leg_controller_->commands_[ leg ].Zero();
-        //     }
-        //     // clear error or warning manually
-        //     robot_ctrl_->Estop();
-        //     if ( robot_ctrl_->GetMotorErrorFlag() || robot_ctrl_->GetMotorWarnFlag() || robot_ctrl_->GetMotionModelag() ) {
-        //         if ( robot_ctrl_->CheckMotorsOverHeat() ) {
-        //             if ( reset_motor_error_cnt >= 2000 && robot_ctrl_->CheckMotorsReturnSaftyTemperature() ) {
-        //                 leg_controller_->SetErrorClear( true );
-        //                 std::cout << "Clear Motor Error !!!" << std::endl;
-        //             }
-        //         }
-        //         else {
-        //             if ( reset_motor_error_cnt >= 2000 ) {
-        //                 leg_controller_->SetErrorClear( true );
-        //                 if ( reset_motor_error_cnt % 1000 == 0 ) {
-        //                     std::cout << "Clear Motor Error !!!" << std::endl;
-        //                 }
-        //             }
-        //         }
-        //         reset_motor_error_cnt++;
-        //     }
-        //     else {
-        //         leg_controller_->SetEnabled( false );
-        //         reset_motor_error_cnt = 0;
-        //     }
-        // }
-        // else {
             // Controller
             // Run Control
-            // LOG(INFO) << "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww" ;
-
             robot_ctrl_->RunController();
             // Update Visualization
-            // robot_ctrl_->UpdateVisualization();
 
             reset_motor_error_cnt = 0;
-        // }
     }
 
     // Visualization (will make this into a separate function later)

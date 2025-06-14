@@ -49,6 +49,9 @@ public:
         delete robot_params_;
     }
     SpiData                         spi_data_;
+    SpiCommand                      spi_command_;
+    VectorNavData                   vector_nav_data_;
+    GamepadCommand                  gamepadCommand;
 private:
     void LcmCmdCallback( const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_control_cmd_lcmt* msg );
     void HotdogLcmCmdCallback( const lcm::ReceiveBuffer* buf, const std::string& channel, const motion_control_request_lcmt* msg );
@@ -88,14 +91,11 @@ private:
 
     CommandInterface cmd_interface_;
 
-    SpiCommand                      spi_command_;
 
     // ComplementaryFilter imu_filter_;
     // MahonyFilter        imu_mh_filter_;
-    VectorNavData       vector_nav_data_;
     VisualizationData               visualization_data_;
     // Cyberdog2Visualization          hotdog2_visualization_;
-    GamepadCommand gamepadCommand;
 };
 
 #endif  // SIMULATION_BRIDGE_HPP_

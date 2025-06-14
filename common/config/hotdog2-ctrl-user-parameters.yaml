@@ -11,14 +11,14 @@ jump_hind_knee         : [2, 0.5, 2.4, 2.1]
 # damping the joint when use mpc only
 
 mpc_body_inertia      : [0.07641, 0.17843, 0.197579]
-mpc_body_mass      : 8.3644
+mpc_body_mass      : 22.954
 mpc_task_weight      : [1.25, 1.25, 2, 2, 2, 50, 0, 0, 0.3, 1.5, 1.5, 0.2]
 # mpc_task_weight      : [2.0, 2.0, 2.0, 20, 20, 300, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # for TV-MPC
 mpc_friction_coef          : 0.4
 mpc_friction_coef_bound    : 0.3
 mpc_friction_coef_follow   : 0.5
-mpc_force_max       : 150.
-mpc_com_offset  : [0.027, 0.0, 0.0]
+mpc_force_max       : 300.
+mpc_com_offset  : [0.0, 0.0, 0.0]
 
 mpc_only_joint_kd            : [0.2,  0.2,  0.2]
 mpc_only_swing_cartesian_kp  : [700., 700., 700.]
@@ -37,7 +37,7 @@ use_wbc               : 1
 
 wbc_weight                : [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 wbc_weight_default        : [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-wbc_weight_walk           : [200.0, 200.0, 200.0, 200.0, 200.0, 200.0]
+wbc_weight_walk           : [400.0, 400.0, 400.0, 400.0, 400.0, 400.0]
 wbc_weight_passive_trot   : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
 wbc_weight_motion_default : [5.0, 5.0, 10.0, 10.0, 10.0, 10.0]
 wbc_weight_ballet         : [50.0, 50.0, 5.0, 10.0, 10.0, 10.0]
@@ -54,14 +54,14 @@ wbc_weight_user_gait      : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 wbc_joint_kp          : [4, 4, 4]
 wbc_joint_kd          : [1, 0.2, 0.2]
 
-wbc_body_kp           : [60, 60, 60] # [100, 100, 100]
-wbc_body_kd           : [6, 6, 12] # [10, 10, 20]
+wbc_body_kp           : [100, 100, 100] # [100, 100, 100]
+wbc_body_kd           : [10, 10, 10] # [10, 10, 20]
 
-wbc_foot_kp           : [500, 500, 500] # [200, 200, 200] # [300, 300, 300] # [500, 500, 500]
-wbc_foot_kd           : [60, 60, 60] # [24, 24, 24] # [36, 36, 36] # [60, 60, 60]
+wbc_foot_kp           : [700, 700, 700] # [200, 200, 200] # [300, 300, 300] # [500, 500, 500]
+wbc_foot_kd           : [80, 80, 80] # [24, 24, 24] # [36, 36, 36] # [60, 60, 60]
 
-wbc_orient_kp            : [60, 60, 60] # [100, 100, 100]
-wbc_orient_kd            : [6, 6, 6] # [10, 10, 10]
+wbc_orient_kp            : [100, 100, 100] # [100, 100, 100]
+wbc_orient_kd            : [10, 10, 10] # [10, 10, 10]
 # reference trajectory of wbc
 wbc_use_mpc_traj        : 1
 wbc_use_mpc_traj_motion : 0

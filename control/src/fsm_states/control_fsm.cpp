@@ -105,17 +105,6 @@ template < typename T > void ControlFsm< T >::RunFsm() {
     static int estop_iter = 0;
     static int edamp_iter = 0;
     static int elift_iter = 0;
-
-    // static auto last_print_time = std::chrono::steady_clock::now();
-    // auto now = std::chrono::steady_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_print_time);
-    // if (duration.count() >= 1000) { // 1000ms = 1秒
-    //     LOG(INFO) << "[CONTROL FSM] Operating Mode: NORMAL in " 
-    //               << current_state_->state_string_;
-    //     last_print_time = now;
-    // }
-
-
     // Check the robot state for safe operation
     operating_mode_ = SafetyPreCheck();
     if ( operating_mode_ == FsmOperatingMode::kEstop || edamp_iter >= 1200 ) {
@@ -204,104 +193,103 @@ template < typename T > void ControlFsm< T >::RunFsm() {
             SafetyPostCheck();
         }
 
-        // if ( operating_mode_ == FsmOperatingMode::kEdamp ) {
-        //     LOG(INFO) << "operating_mode_ = kEdamp" ;
-        //     if ( current_state_->state_name_ != FsmStateName::kPureDamper ) {
-        //         if ( edamp_iter < 1 ) {
-        //             current_state_->OnExit();
-        //         }
+        if ( operating_mode_ == FsmOperatingMode::kEdamp ) {
+            LOG(INFO) << "operating_mode_ = kEdamp" ;
+            if ( current_state_->state_name_ != FsmStateName::kPureDamper ) {
+                if ( edamp_iter < 1 ) {
+                    current_state_->OnExit();
+                }
 
-        //         current_state_ = states_list_.pure_damper;
-        //         if ( edamp_iter < 1 ) {
-        //             current_state_->OnEnter();
-        //         }
-        //     }
-        //     if ( edamp_iter > 1550 || current_state_->CheckTransition() == FsmStateName::kRlReset ) {
-        //         // Check the current state for any transition
-        //         next_state_name_ = current_state_->CheckTransition();
-        //     }
-        //     else {
-        //         usleep( 100 );
-        //         next_state_name_ = current_state_->state_name_;
-        //     }
+                current_state_ = states_list_.pure_damper;
+                if ( edamp_iter < 1 ) {
+                    current_state_->OnEnter();
+                }
+            }
+            if ( edamp_iter > 1550 || current_state_->CheckTransition() == FsmStateName::kRlReset ) {
+                // Check the current state for any transition
+                next_state_name_ = current_state_->CheckTransition();
+            }
+            else {
+                usleep( 100 );
+                next_state_name_ = current_state_->state_name_;
+            }
 
-        //     // Detect a commanded transition
-        //     if ( next_state_name_ != current_state_->state_name_ ) {
-        //         // Set the FSM operating mode to transitioning
-        //         operating_mode_ = FsmOperatingMode::kTransitioning;
+            // Detect a commanded transition
+            if ( next_state_name_ != current_state_->state_name_ ) {
+                // Set the FSM operating mode to transitioning
+                operating_mode_ = FsmOperatingMode::kTransitioning;
 
-        //         // Get the next FSM State by name
-        //         next_state_ = GetNextState( next_state_name_ );
-        //         if ( edamp_iter % 50 == 0 )
-        //             LOG(INFO) << "[CONTROL FSM] transition fsm from " 
-        //                 << current_state_->state_string_ << " to " 
-        //                 << next_state_->state_string_;                }
-        //     else {
-        //         // Run the iteration for the current state normally
-        //         current_state_->Run();
-        //     }
+                // Get the next FSM State by name
+                next_state_ = GetNextState( next_state_name_ );
+                if ( edamp_iter % 50 == 0 )
+                    LOG(INFO) << "[CONTROL FSM] transition fsm from " 
+                        << current_state_->state_string_ << " to " 
+                        << next_state_->state_string_;                }
+            else {
+                // Run the iteration for the current state normally
+                current_state_->Run();
+            }
 
-        //     edamp_iter++;
-        // }
-        // else {
-        //     edamp_iter = 0;
-        // }
+            edamp_iter++;
+        }
+        else {
+            edamp_iter = 0;
+        }
 
-        // if ( operating_mode_ == FsmOperatingMode::kRobotLifted ) {
-        //     LOG(INFO) << "operating_mode_ = kRobotLifted" ;
-        //     if ( elift_iter < 1 ) {
-        //         current_state_->OnExit();
-        //     }
+        if ( operating_mode_ == FsmOperatingMode::kRobotLifted ) {
+            LOG(INFO) << "operating_mode_ = kRobotLifted" ;
+            if ( elift_iter < 1 ) {
+                current_state_->OnExit();
+            }
 
-        //     if ( robotlifted_error_ ) {  // robotlifted_error_ triggers lifted protection
-        //         current_state_ = states_list_.lifted;
-        //     }
-        //     else {
-        //         current_state_ = states_list_.pure_damper;
-        //     }
+            if ( robotlifted_error_ ) {  // robotlifted_error_ triggers lifted protection
+                current_state_ = states_list_.lifted;
+            }
+            else {
+                current_state_ = states_list_.pure_damper;
+            }
 
-        //     if ( elift_iter < 1 ) {
-        //         current_state_->OnEnter();
-        //     }
+            if ( elift_iter < 1 ) {
+                current_state_->OnEnter();
+            }
 
-        //     if ( elift_iter > 1000 ) {
-        //         // Check the current state for any transition
-        //         next_state_name_ = current_state_->CheckTransition();
-        //     }
-        //     else {
-        //         usleep( 100 );
-        //         next_state_name_ = current_state_->state_name_;
-        //     }
+            if ( elift_iter > 1000 ) {
+                // Check the current state for any transition
+                next_state_name_ = current_state_->CheckTransition();
+            }
+            else {
+                usleep( 100 );
+                next_state_name_ = current_state_->state_name_;
+            }
 
-        //     // Detect a commanded transition
-        //     if ( next_state_name_ != current_state_->state_name_ ) {
-        //         // Set the FSM operating mode to transitioning
-        //         operating_mode_ = FsmOperatingMode::kTransitioning;
+            // Detect a commanded transition
+            if ( next_state_name_ != current_state_->state_name_ ) {
+                // Set the FSM operating mode to transitioning
+                operating_mode_ = FsmOperatingMode::kTransitioning;
 
-        //         // Get the next FSM State by name
-        //         next_state_ = GetNextState( next_state_name_ );
-        //         LOG(INFO) << "[CONTROL FSM] transition fsm from " 
-        //             << current_state_->state_string_ 
-        //             << " to " 
-        //             << next_state_->state_string_;
-        //     }
-        //     else {
-        //         // Run the iteration for the current state normally
-        //         current_state_->Run();
-        //     }
+                // Get the next FSM State by name
+                next_state_ = GetNextState( next_state_name_ );
+                LOG(INFO) << "[CONTROL FSM] transition fsm from " 
+                    << current_state_->state_string_ 
+                    << " to " 
+                    << next_state_->state_string_;
+            }
+            else {
+                // Run the iteration for the current state normally
+                current_state_->Run();
+            }
 
-        //     elift_iter++;
-        // }
-        // else {
-        //     elift_iter = 0;
-        // }
+            elift_iter++;
+        }
+        else {
+            elift_iter = 0;
+        }
     }
     else {  // if ESTOP
         if ( estop_iter++ % 2000 == 0 ) {
             LOG(INFO) << "[CONTROL FSM] Robot is in ESTOP" ;
         }
-        LOG(INFO) << "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz" ;
-
+        
         current_state_ = states_list_.passive;
         current_state_->OnEnter();
         next_state_name_ = current_state_->state_name_;

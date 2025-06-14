@@ -56,6 +56,7 @@
 
 // #include "simulation_bridge_interface.hpp" // 只声明
 #include "simulation_bridge.hpp"           // 包含完整定义
+#include <sensor_msgs/msg/joy.hpp>
 
 
 // #include "task/Task.hpp"
@@ -105,10 +106,13 @@ protected:
   void cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg);
   void posestamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
   void fsm_goal_cb(const std_msgs::msg::String::SharedPtr msg);
+  void joy_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
+  
   void odom_cb();
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscription_;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr posestamped_subscription_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr fsm_goal_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscription_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
   rclcpp::TimerBase::SharedPtr odom_timer_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster_;
@@ -147,8 +151,8 @@ protected: // TODO:
   float quat_[4];
   float motor_pos_[12];
   float motor_vel_[12];
-
   float torque_[12];
+  SimulationBridgeInterface::JoyData joy_data_;
   int mode_ = 0;
   // VelGaitCmd vel_gait_cmd_;
   bool init_flag_ = false;

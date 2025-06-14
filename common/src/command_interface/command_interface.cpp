@@ -136,39 +136,39 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
     };
 
     int current_mode = 0;
-    if ( !use_rc ) {
-        if ( gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
+    // if ( !use_rc ) {
+    //     if ( gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
             current_mode = kGamepadCmd;
-        }
-        else if ( gamepad_timer_.GetElapsedSeconds() < 2 * CMD_TIMEOUT ) {
-            *control_mode = MotionMode::kPureDamper;
-            *gait_id      = 0;
-            current_mode  = 0;
-        }
-    }
-    else {  // rc & lcm
-        if ( rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT || rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-            current_mode = kRcCmd;
-        }
-        else if ( MotorCtrl_mode_flag_ ) {
-            current_mode = kMotorCmd;
-        }
-        else if ( lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-            current_mode = kHotdog2LcmCmd;
-        }
-        else if ( hotdog_lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-            current_mode = kHotdogLcmCmd;
-        }
-        else {
-            // all source timeout, make the dog puredamper
-            if ( command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast< int >( MotionMode::kOff ) )
-                *control_mode = MotionMode::kPureDamper;
-            else
-                *control_mode = MotionMode::kOff;
-            current_mode = 0;
-            *gait_id     = 0;
-        }
-    }
+    //     }
+    //     else if ( gamepad_timer_.GetElapsedSeconds() < 2 * CMD_TIMEOUT ) {
+    //         *control_mode = MotionMode::kPureDamper;
+    //         *gait_id      = 0;
+    //         current_mode  = 0;
+    //     }
+    // }
+    // else {  // rc & lcm
+    //     if ( rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT || rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
+    //         current_mode = kRcCmd;
+    //     }
+    //     else if ( MotorCtrl_mode_flag_ ) {
+    //         current_mode = kMotorCmd;
+    //     }
+    //     else if ( lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
+    //         current_mode = kHotdog2LcmCmd;
+    //     }
+    //     else if ( hotdog_lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
+    //         current_mode = kHotdogLcmCmd;
+    //     }
+    //     else {
+    //         // all source timeout, make the dog puredamper
+    //         if ( command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast< int >( MotionMode::kOff ) )
+    //             *control_mode = MotionMode::kPureDamper;
+    //         else
+    //             *control_mode = MotionMode::kOff;
+    //         current_mode = 0;
+    //         *gait_id     = 0;
+    //     }
+    // }
 
     if ( current_mode != last_mode_ ) {
         std::cout << "[CommandInterface::PrepareCmd] ";
