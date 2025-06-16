@@ -111,7 +111,7 @@ template < typename T > using D3Mat = typename Eigen::Matrix< T, 3, Eigen::Dynam
 // std::vector (a list) of Eigen things
 template < typename T > using vectorAligned = typename std::vector< T, Eigen::aligned_allocator< T > >;
 
-enum class RobotType { CYBERDOG, CYBERDOG2 };
+enum class RobotType { CYBERDOG, CYBERDOG2, HOTDOG };
 
 enum class RobotAppearanceType { CURVED, ANGULAR };
 

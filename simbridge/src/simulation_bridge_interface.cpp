@@ -11,8 +11,6 @@ SimulationBridgeInterface::~SimulationBridgeInterface() {
 
 void SimulationBridgeInterface::Run(const float* motor_pos, const float* motor_vel, const float* motor_tor, const float* quat, const float* gyro, const float* accl, SpiCommand &spi_command_,JoyData &joydata)
 {
-
-
     bridge_->gamepadCommand.a = joydata.buttons[2];//t
     bridge_->gamepadCommand.b = joydata.buttons[3];//y
     bridge_->gamepadCommand.x = joydata.buttons[0];//e
@@ -31,17 +29,13 @@ void SimulationBridgeInterface::Run(const float* motor_pos, const float* motor_v
         bridge_->spi_data_.tau_abad[leg] = motor_tor[leg * 3 + 0];
         bridge_->spi_data_.tau_hip[leg]  = motor_tor[leg * 3 + 1];
         bridge_->spi_data_.tau_knee[leg] = motor_tor[leg * 3 + 2];
-
-
-
-
     }
 
-        bridge_->vector_nav_data_.quat[0] = quat[1];
-        bridge_->vector_nav_data_.quat[1] = quat[2];
-        bridge_->vector_nav_data_.quat[2] = quat[3];
-        bridge_->vector_nav_data_.quat[3] = quat[0];
-    
+    bridge_->vector_nav_data_.quat[0] = quat[1];
+    bridge_->vector_nav_data_.quat[1] = quat[2];
+    bridge_->vector_nav_data_.quat[2] = quat[3];
+    bridge_->vector_nav_data_.quat[3] = quat[0];
+
     for (size_t i = 0; i < 3; i++)
     {
         bridge_->vector_nav_data_.gyro[i] = gyro[i];
@@ -80,9 +74,5 @@ void SimulationBridgeInterface::Run(const float* motor_pos, const float* motor_v
 }
 
 void SimulationBridgeInterface::HandleControlParameters() {
-    bridge_->HandleControlParameters();
-}
-
-void SimulationBridgeInterface::RunRobotControl() {
-    bridge_->RunRobotControl();
+    // bridge_->HandleControlParameters();
 }

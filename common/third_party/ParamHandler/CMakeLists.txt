@@ -1,20 +1,7 @@
 
-
-
 option(PARAM_TEST "Build test programe for ParamHandler")
 
-
-# select version of yaml-cpp for different build methods
-if(BUILD_ROS)
-  find_package(yaml_cpp_vendor REQUIRED)
-  set(YAML_CPP_INCLUDE_DIRS "/usr/local/include/yaml-cpp")
-  set(YAML_CPP_LIBRARIES "/usr/local/lib/libyaml-cpp.so")
-  include_directories(${YAML_CPP_INCLUDE_DIRS})
-elseif(NOT BUILD_ROS)
-  find_package(yaml-cpp 0.6.3 EXACT REQUIRED)
-endif(BUILD_ROS)
-
-
+find_package(yaml-cpp 0.6.3 EXACT REQUIRED)
 
 ###
 ### Library
