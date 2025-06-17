@@ -8,9 +8,11 @@
 
 #include <glog/logging.h>
 
-#include "simulation_bridge.hpp"
+#include "ros_bridge/simulation_bridge.hpp"
 #include "utilities/segfault_handler.hpp"
 
+namespace hotdog_locomotion
+{
 
 SimulationBridge::SimulationBridge(RobotType robot_type, RobotController* robot_ctrl)
 : robot_type_(robot_type), controller_(robot_ctrl)
@@ -71,12 +73,12 @@ bool SimulationBridge::LoadControlParametersFromFiles()
 	}
 	catch ( std::exception& e ) {
 		printf( "Failed to initialize robot parameters from yaml file: %s\n", e.what() );
-		exit( 1 );
+		return false;
 	}
 
 	if ( !robot_params_->IsFullyInitialized() ) {
 		printf( "Failed to initialize all robot parameters\n" );
-		exit( 1 );
+		return false;
 	}
 
 	printf( "Loaded robot parameters\n" );
@@ -157,12 +159,15 @@ void SimulationBridge::Run()
 void SimulationBridge::RunRobotControl()
 {
 	if ( first_controller_run_ ) {
+		std::cout << first_controller_run_ << std::endl;
 		LoadControlParametersFromFiles();
 		InitRobotRunner();
-		robot_runner_->Init();
+		// robot_runner_->Init();
 		first_controller_run_ = false;
 	}
-	cmd_interface_.ProcessGamepadCommand( gamepadCommand);
+	// cmd_interface_.ProcessGamepadCommand( gamepadCommand);
 
-	robot_runner_->Run();
+	// robot_runner_->Run();
 }
+
+}  // namespace hotdog_locomotion
