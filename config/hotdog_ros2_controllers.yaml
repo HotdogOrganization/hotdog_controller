@@ -10,7 +10,7 @@
       imu_sensor_broadcaster:
         type: imu_sensor_broadcaster/IMUSensorBroadcaster
       hotdog_controller:
-        type: hotdog_locomotion/NewRobotController
+        type: hotdog_locomotion/HotdogControllerPlugin
       effort_controller:
         type: effort_controllers/JointGroupEffortController
       
@@ -28,22 +28,21 @@
     ros__parameters:
       update_rate: 500  # Hz
       joints:
+        - FR_abad_joint
+        - FR_hip_joint
+        - FR_knee_joint
 
-        - Right-qian-joint-1
-        - Right-qian-joint-2
-        - Right-qian-joint-3
+        - FL_abad_joint
+        - FL_hip_joint
+        - FL_knee_joint
 
-        - Left-qian-joint-1
-        - Left-qian-joint-2
-        - Left-qian-joint-3
+        - RR_abad_joint
+        - RR_hip_joint
+        - RR_knee_joint
 
-        - Right-hou-joint-1
-        - Right-hou-joint-2
-        - Right-hou-joint-3
-
-        - Left-hou-joint-1
-        - Left-hou-joint-2
-        - Left-hou-joint-3
+        - RL_abad_joint
+        - RL_hip_joint
+        - RL_knee_joint
       command_interfaces:
         - position
         - velocity
@@ -67,20 +66,18 @@
   effort_controller:
     ros__parameters:
       joints:
+        - FR_abad_joint
+        - FR_hip_joint
+        - FR_knee_joint
 
-        - Right-qian-joint-1
-        - Right-qian-joint-2
-        - Right-qian-joint-3
+        - FL_abad_joint
+        - FL_hip_joint
+        - FL_knee_joint
 
-        - Right-hou-joint-1
-        - Right-hou-joint-2
-        - Right-hou-joint-3
-                
-        - Left-qian-joint-1
-        - Left-qian-joint-2
-        - Left-qian-joint-3
+        - RR_abad_joint
+        - RR_hip_joint
+        - RR_knee_joint
 
-        - Left-hou-joint-1
-        - Left-hou-joint-2
-        - Left-hou-joint-3
-
+        - RL_abad_joint
+        - RL_hip_joint
+        - RL_knee_joint

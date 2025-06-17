@@ -50,11 +50,8 @@
 
 
 #include "sub_main.hpp"
-#include "simulation_bridge_interface.hpp"
 #include "robot_controller.hpp"
 #include "hotdog_controller.hpp"
-
-// #include "simulation_bridge_interface.hpp" // 只声明
 #include "simulation_bridge.hpp"           // 包含完整定义
 #include <sensor_msgs/msg/joy.hpp>
 
@@ -79,11 +76,11 @@ struct Joint
   std::string name;
 };
 
-class NewRobotController : public controller_interface::ControllerInterface
+class HotdogControllerPlugin : public controller_interface::ControllerInterface
 {
 public:
-  ~NewRobotController();
-  NewRobotController();
+  ~HotdogControllerPlugin();
+  HotdogControllerPlugin();
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
   controller_interface::CallbackReturn on_init() override;
@@ -134,8 +131,6 @@ protected: // TODO:
   void update_control_parameters();
 
   int init_estimator_count_{0};
-  // std::shared_ptr<FSM> FSMController_;
-  // std::shared_ptr<ControlFSMData> controlData_;
   void mainLoopThread();
   // void lqrLoopThread();
   // std::thread main_thread_;//, lqr_thread_;
@@ -152,25 +147,18 @@ protected: // TODO:
   float motor_pos_[12];
   float motor_vel_[12];
   float torque_[12];
-  SimulationBridgeInterface::JoyData joy_data_;
+  SimulationBridge::JoyData joy_data_;
   int mode_ = 0;
-  // VelGaitCmd vel_gait_cmd_;
   bool init_flag_ = false;
 
-
-
-  std::unique_ptr<SimulationBridgeInterface> simulation_bridge_;
-  std::unique_ptr<RobotController> ctrl_;
-  bool simulation_bridge_initialized_ = false;
-
-
-
+  std::unique_ptr<SimulationBridge> simulation_bridge_;
+  std::unique_ptr<RobotController> hotdog_controller_;
 };
 
-class CheaterNewRobotController : public NewRobotController
-{
-public:
-  void setup_state_estimate() override;
-};
+// class CheaterHotdogControllerPlugin : public HotdogControllerPlugin
+// {
+// public:
+//   void setup_state_estimate() override;
+// };
 }  // namespace tita_locomotion
 #endif  // TITATI_CONTROLLER__TITATI_CONTROLLER_NODE_HPP_

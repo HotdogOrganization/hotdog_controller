@@ -11,25 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "pluginlib/class_list_macros.hpp"
 
 #include "hotdog_controller/hotdog_controller_node.hpp"
-
-#include "pluginlib/class_list_macros.hpp"
+#include "msg_conversion.hpp"
 
 namespace hotdog_locomotion
 {
-NewRobotController::NewRobotController() {}
+HotdogControllerPlugin::HotdogControllerPlugin() {}
 
 
 
 
-controller_interface::CallbackReturn NewRobotController::on_init()
+controller_interface::CallbackReturn HotdogControllerPlugin::on_init()
 {
-
-
-
-
-
   try {
     joint_names_ = auto_declare<std::vector<std::string>>("joints", joint_names_);
     command_interface_types_ =
@@ -52,13 +47,9 @@ controller_interface::CallbackReturn NewRobotController::on_init()
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn NewRobotController::on_configure(
+controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
   const rclcpp_lifecycle::State & /* previous_state */)
 {
-
-
-
-
   if (joint_names_.empty()) {
     RCLCPP_ERROR(get_node()->get_logger(), "The 'joints' parameter is empty");
     return controller_interface::CallbackReturn::ERROR;
@@ -73,29 +64,29 @@ controller_interface::CallbackReturn NewRobotController::on_configure(
   cmd_vel_subscription_ =
     get_node()->create_subscription<geometry_msgs::msg::Twist>(
       tita_topic::manager_twist_command, rclcpp::SensorDataQoS().reliable(),
-      std::bind(&NewRobotController::cmd_vel_cb, this, std::placeholders::_1));
+      std::bind(&HotdogControllerPlugin::cmd_vel_cb, this, std::placeholders::_1));
   posestamped_subscription_ =
     get_node()->create_subscription<geometry_msgs::msg::PoseStamped>(
       tita_topic::manager_pose_command, rclcpp::SensorDataQoS().reliable(),
-      std::bind(&NewRobotController::posestamped_cb, this, std::placeholders::_1));      
+      std::bind(&HotdogControllerPlugin::posestamped_cb, this, std::placeholders::_1));      
   fsm_goal_subscription_ =
     get_node()->create_subscription<std_msgs::msg::String>(
       tita_topic::manager_key_command, rclcpp::SensorDataQoS().reliable(),
-      std::bind(&NewRobotController::fsm_goal_cb, this, std::placeholders::_1));
+      std::bind(&HotdogControllerPlugin::fsm_goal_cb, this, std::placeholders::_1));
 
   joy_subscription_ =
     get_node()->create_subscription<sensor_msgs::msg::Joy>(
       tita_topic::manager_hotdog_key, rclcpp::SensorDataQoS().reliable(),
-      std::bind(&NewRobotController::joy_cb, this, std::placeholders::_1));
+      std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
 
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
   odom_timer_ = get_node()->create_wall_timer(
-    std::chrono::milliseconds(100), std::bind(&NewRobotController::odom_cb, this));
+    std::chrono::milliseconds(100), std::bind(&HotdogControllerPlugin::odom_cb, this));
   odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(get_node());    
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::InterfaceConfiguration NewRobotController::command_interface_configuration() const
+controller_interface::InterfaceConfiguration HotdogControllerPlugin::command_interface_configuration() const
 {
   std::vector<std::string> conf_names;
   for (std::shared_ptr<Joint> joint : joints_) {
@@ -107,7 +98,7 @@ controller_interface::InterfaceConfiguration NewRobotController::command_interfa
   return {controller_interface::interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::InterfaceConfiguration NewRobotController::state_interface_configuration() const
+controller_interface::InterfaceConfiguration HotdogControllerPlugin::state_interface_configuration() const
 {
   std::vector<std::string> conf_names;
   for (std::shared_ptr<Joint> joint : joints_) {
@@ -118,31 +109,7 @@ controller_interface::InterfaceConfiguration NewRobotController::state_interface
   return {controller_interface::interface_configuration_type::INDIVIDUAL, conf_names};
 }
 
-controller_interface::return_type NewRobotController::update(
-  const rclcpp::Time & time, const rclcpp::Duration & period)
-{
-  (void)time;
-  (void)period;
-  if (param_listener_->is_old(params_)) {
-    params_ = param_listener_->get_params();
-    update_control_parameters();
-  }
-  // controlData_->params->dt_ = period.seconds();
-
-  mainLoopThread();
-  // TODO:
-  // if (!lqr_thread_running_) {
-  //   lqr_thread_running_ = true;
-  //   lqr_thread_ = std::thread([this]() {
-  //     while (lqr_thread_running_) {
-  //       lqrLoopThread();
-  //     }
-  //   });
-  // }
-  return controller_interface::return_type::OK;
-}
-
-controller_interface::CallbackReturn NewRobotController::on_activate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn HotdogControllerPlugin::on_activate(const rclcpp_lifecycle::State &)
 {
   for (std::shared_ptr<Joint> joint : joints_) {
     // Position command
@@ -231,44 +198,45 @@ controller_interface::CallbackReturn NewRobotController::on_activate(const rclcp
     joint->effort_handle = std::ref(*effort_handle);
   }
   imu_sensor_->assign_loaned_state_interfaces(state_interfaces_);
+  is_running_ = true;
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn NewRobotController::on_deactivate(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn HotdogControllerPlugin::on_deactivate(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_node()->get_logger(), "on_deactivate ");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn NewRobotController::on_cleanup(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn HotdogControllerPlugin::on_cleanup(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_node()->get_logger(), "on_cleanup ");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn NewRobotController::on_error(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn HotdogControllerPlugin::on_error(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_node()->get_logger(), "on_error ");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn NewRobotController::on_shutdown(const rclcpp_lifecycle::State &)
+controller_interface::CallbackReturn HotdogControllerPlugin::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_node()->get_logger(), "on_shutdown ");
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
-NewRobotController::~NewRobotController() {}
+HotdogControllerPlugin::~HotdogControllerPlugin() {}
 
 // TODO:
-void NewRobotController::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg){
+void HotdogControllerPlugin::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg){
   // (void)msg;
   // auto cmd = controlData_->state_command->rc_command_;
   // vel_gait_cmd_.x_vel_cmd = msg->linear.x;
   // vel_gait_cmd_.yaw_turn_rate = msg->angular.z;
 }
 
-void NewRobotController::posestamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
+void HotdogControllerPlugin::posestamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg){
   (void)msg;
   // RCLCPP_INFO(get_node()->get_logger(), 
   // "Received PoseStamped: position(x: %f, y: %f, z: %f), orientation(x: %f, y: %f, z: %f, w: %f)",
@@ -299,7 +267,7 @@ void NewRobotController::posestamped_cb(const geometry_msgs::msg::PoseStamped::S
   // cmd->pose_orientation_[QW] = msg->pose.orientation.w;
 }
 
-void NewRobotController::fsm_goal_cb(
+void HotdogControllerPlugin::fsm_goal_cb(
   const std_msgs::msg::String::SharedPtr msg)
 {
   // (void)msg;
@@ -317,14 +285,14 @@ void NewRobotController::fsm_goal_cb(
     mode_ = 0;
 }
 
-void NewRobotController::joy_cb(
+void HotdogControllerPlugin::joy_cb(
   const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   joy_data_.axes = msg->axes;
   joy_data_.buttons = msg->buttons;
 }
 
-void NewRobotController::odom_cb()
+void HotdogControllerPlugin::odom_cb()
 {
   std::string frame_prefix_ = auto_declare<std::string>("frame_prefix", "");  // 默认空字符串
   // 发布TransformStamped消息
@@ -361,17 +329,48 @@ void NewRobotController::odom_cb()
   odom_publisher_->publish(odom_msg);
 }
 
-void NewRobotController::setup_controller(){
-  // robot_task_ = std::make_shared<WheelQuadruped_Task>(torque_);
-  // controlData_ = std::make_shared<ControlFSMData>(joint_names_.size());
-  setup_control_parameters();
-  setup_state_estimate();
-  // FSMController_ = std::make_shared<FSM>(controlData_);
+controller_interface::return_type HotdogControllerPlugin::update(
+  const rclcpp::Time & time, const rclcpp::Duration & period)
+{
+  if (!is_running_) {
+    RCLCPP_ERROR(get_node()->get_logger(), "Controller is not running, please activate it first.");
+    return controller_interface::return_type::ERROR;
+  }
+
+  (void)time;
+  (void)period;
+  if (param_listener_->is_old(params_)) {
+    params_ = param_listener_->get_params();
+    update_control_parameters();
+  }
+  // controlData_->params->dt_ = period.seconds();
+
+  mainLoopThread();
+  // TODO:
+  // if (!lqr_thread_running_) {
+  //   lqr_thread_running_ = true;
+  //   lqr_thread_ = std::thread([this]() {
+  //     while (lqr_thread_running_) {
+  //       lqrLoopThread();
+  //     }
+  //   });
+  // }
+  return controller_interface::return_type::OK;
 }
-void NewRobotController::mainLoopThread()
+
+
+void HotdogControllerPlugin::setup_controller()
+{
+  hotdog_controller_ = std::make_unique<HotdogController>();
+  RobotType robot_type = RobotType::CYBERDOG2;
+  simulation_bridge_ = std::make_unique<SimulationBridge>(robot_type, hotdog_controller_.get());
+  RCLCPP_INFO(get_node()->get_logger(), "HotdogControllerPlugin setup_controller done");
+}
+
+
+void HotdogControllerPlugin::mainLoopThread()
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
-
   size_t id = 0;
   for (std::shared_ptr<Joint> joint : joints_) {
     motor_pos_[id] = joint->position_handle->get().get_value();
@@ -390,82 +389,61 @@ void NewRobotController::mainLoopThread()
     // robot_task_->Run_Init();
     // vel_gait_cmd_.use_wbc = true;
   }
-  // robot_task_->Run_Update(quat_, gyro_, accl_, motor_pos_, motor_vel_);
-  // robot_task_->Run_Ctrl(mode_, vel_gait_cmd_);
 
+  float abad_effort[4], hip_effort[4], knee_effort[4];
 
-  // static bool simulation_bridge_initialized_ = false;
-//   if (!simulation_bridge_initialized_) {
-//     RobotController* ctrl = new HotdogController();
-//     MasterConfig gMasterConfig;
-//     gMasterConfig.robot = RobotType::CYBERDOG2;
-//     SimulationBridgeInterface simulationBridge( gMasterConfig.robot, ctrl );
-//     simulationBridge.Run();
-//     simulation_bridge_initialized_ = true;
-// }
-// // 每次循环都可以调用 Run()，或者根据你的需求只调用一次
-//   // simulationBridge.Run();
-
-
-
-
-
-  // 只初始化一次
-  if (!simulation_bridge_initialized_) {
-    ctrl_ = std::make_unique<HotdogController>();
-    MasterConfig gMasterConfig;
-    gMasterConfig.robot = RobotType::CYBERDOG2;
-    simulation_bridge_ = std::make_unique<SimulationBridgeInterface>(gMasterConfig.robot, ctrl_.get());
-    simulation_bridge_initialized_ = true;
-  }
   // 后续直接调用
-  SpiCommand spi_command_;
-  float abad_effort[4],hip_effort[4],knee_effort[4];
   if (simulation_bridge_) {
-    simulation_bridge_->Run(motor_pos_, motor_vel_, torque_, quat_, gyro_, accl_, spi_command_,joy_data_);
+    GamepadCommand gamepad_command;
+    gamepad_command.a = joy_data_.buttons[2]; // t
+    gamepad_command.b = joy_data_.buttons[3]; // y
+    gamepad_command.x = joy_data_.buttons[0]; // e
+    gamepad_command.y = joy_data_.buttons[1]; // r
+
+    simulation_bridge_->SetGamepadCommand(gamepad_command);
+    SpiCommand spi_command = simulation_bridge_->GetSpiCommand();
+
+    SpiData motor_status = msg_conversion::ConvertToSpiData(motor_pos_, motor_vel_, torque_);
+    simulation_bridge_->SetSpiData(motor_status);
+
+    VectorNavData vector_nav_data = msg_conversion::ConvertToVectorNavData(quat_, gyro_, accl_);
+    simulation_bridge_->SetVectorNavData(vector_nav_data);
+
+    simulation_bridge_->Run();
+
     static int count = 0; // 在函数外或者类成员变量中声明，确保每次循环时不会被重置
+    if (count < 1000) {
+      for (int i = 0; i < 4; ++i) {
+        abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) +
+                            1.5 * (0 - motor_vel_[i*3+0]) 
+                            + spi_command.tau_abad_ff[i];
+    
+        hip_effort[i] = 60 * (-1.5 - (-motor_pos_[i*3+1])) +
+                            1.5 * (0 - (-motor_vel_[i*3+1]))
+                            + spi_command.tau_hip_ff[i];
+    
+        knee_effort[i] = 60 * (2.7 - (-motor_pos_[i*3+2])) +
+                            1.5 * (0 - (-motor_vel_[i*3+2]))
+                            + spi_command.tau_knee_ff[i];
+      }
+      count++;
+    } else {
+      for (int i = 0; i < 4; ++i) {
+        abad_effort[i] = spi_command.kp_abad[i] * (spi_command.q_des_abad[i] - motor_pos_[i*3+0]) +
+                          spi_command.kd_abad[i] * (0 - motor_vel_[i*3+0]) +
+                          spi_command.tau_abad_ff[i];
 
-    // 在周期循环函数内
-    if (count < 1000)
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-          abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) +
-                              1.5 * (0 - motor_vel_[i*3+0]) 
-                              + spi_command_.tau_abad_ff[i];
-      
-          hip_effort[i] = 60 * (-1.5 - (-motor_pos_[i*3+1])) +
-                              1.5 * (0 - (-motor_vel_[i*3+1]))
-                              + spi_command_.tau_hip_ff[i];
-      
-          knee_effort[i] = 60 * (2.7 - (-motor_pos_[i*3+2])) +
-                              1.5 * (0 - (-motor_vel_[i*3+2]))
-                              + spi_command_.tau_knee_ff[i];
-        }
-        count++;
+        hip_effort[i] = spi_command.kp_hip[i] * (spi_command.q_des_hip[i] - (-motor_pos_[i*3+1])) +
+                        spi_command.kd_hip[i] * (0 - (-motor_vel_[i*3+1])) +
+                        spi_command.tau_hip_ff[i];
+
+        knee_effort[i] = spi_command.kp_knee[i] * (spi_command.q_des_knee[i] - (-motor_pos_[i*3+2])) +
+                         spi_command.kd_knee[i] * (0 - (-motor_vel_[i*3+2])) +
+                         spi_command.tau_knee_ff[i];
+      }
     }
-    else
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            abad_effort[i] = spi_command_.kp_abad[i] * (spi_command_.q_des_abad[i] - motor_pos_[i*3+0]) +
-                              spi_command_.kd_abad[i] * (0 - motor_vel_[i*3+0]) +
-                              spi_command_.tau_abad_ff[i];
-
-            hip_effort[i] = spi_command_.kp_hip[i] * (spi_command_.q_des_hip[i] - (-motor_pos_[i*3+1])) +
-                            spi_command_.kd_hip[i] * (0 - (-motor_vel_[i*3+1])) +
-                            spi_command_.tau_hip_ff[i];
-
-            knee_effort[i] = spi_command_.kp_knee[i] * (spi_command_.q_des_knee[i] - (-motor_pos_[i*3+2])) +
-                              spi_command_.kd_knee[i] * (0 - (-motor_vel_[i*3+2])) +
-                              spi_command_.tau_knee_ff[i];
-        }
-    }
-
   }
 
-
-  
   float t_tmp[4] = {0.};
   for(int i = 0; i < 4; i++) {
     t_tmp[i] = torque_[i];
@@ -492,12 +470,12 @@ void NewRobotController::mainLoopThread()
   }
 
 
-for (int i = 0; i < 4; ++i) {
-    torque_[i * 3 + 0] = abad_effort[i];
-    torque_[i * 3 + 1] = -hip_effort[i];
-    torque_[i * 3 + 2] = -knee_effort[i];
+  for (int i = 0; i < 4; ++i) {
+      torque_[i * 3 + 0] = abad_effort[i];
+      torque_[i * 3 + 1] = -hip_effort[i];
+      torque_[i * 3 + 2] = -knee_effort[i];
 
-}
+  }
   // torque_[12] = 0; 
   // Update torque
   for (uint id = 0; id < joints_.size(); id++) {
@@ -522,33 +500,33 @@ for (int i = 0; i < 4; ++i) {
 }
 
 
-void NewRobotController::setup_control_parameters()
+void HotdogControllerPlugin::setup_control_parameters()
 {
 
 }
 
-void NewRobotController::update_control_parameters()
+void HotdogControllerPlugin::update_control_parameters()
 {
 
   RCLCPP_INFO(get_node()->get_logger(), "Parameters were updated");
 }
 
 
-void NewRobotController::setup_state_estimate()
+void HotdogControllerPlugin::setup_state_estimate()
 {
 
 }
 
-void CheaterNewRobotController::setup_state_estimate()
-{
+// void CheaterHotdogControllerPlugin::setup_state_estimate()
+// {
 
-}
+// }
 
 }  // namespace tita_locomotion
 
 #include "class_loader/register_macro.hpp"
 
-PLUGINLIB_EXPORT_CLASS(hotdog_locomotion::NewRobotController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(hotdog_locomotion::HotdogControllerPlugin, controller_interface::ControllerInterface)
 
 // PLUGINLIB_EXPORT_CLASS(
-//   tita_locomotion::CheaterNewRobotController, controller_interface::ControllerInterface)
+//   tita_locomotion::CheaterHotdogControllerPlugin, controller_interface::ControllerInterface)
