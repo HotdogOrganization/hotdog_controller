@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef hotdog_CONTROLLER__hotdog_CONTROLLER_NODE_HPP_
-#define hotdog_CONTROLLER__hotdog_CONTROLLER_NODE_HPP_
+#ifndef HOTDOG_CONTROLLER__ROS_BRIDGE__HOTDOG_CONTROLLER_PLUGIN_HPP_
+#define HOTDOG_CONTROLLER__ROS_BRIDGE__HOTDOG_CONTROLLER_PLUGIN_HPP_
 
 #include <chrono>
 #include <memory>
@@ -45,15 +45,13 @@
 // #include "controller_common/Benchmark.h"
 // #include "controller_estimator/LinearKFPositionVelocityEstimator.h"
 // #include "controller_estimator/OrientationEstimator.h"
+#include <sensor_msgs/msg/joy.hpp>
 
 #include "tita_utils/topic_names.hpp"
 
-
-#include "sub_main.hpp"
 #include "robot_controller.hpp"
 #include "hotdog_controller.hpp"
-#include "simulation_bridge.hpp"           // 包含完整定义
-#include <sensor_msgs/msg/joy.hpp>
+#include "ros_bridge/simulation_bridge.hpp"
 
 
 // #include "task/Task.hpp"
@@ -160,5 +158,6 @@ protected: // TODO:
 // public:
 //   void setup_state_estimate() override;
 // };
-}  // namespace tita_locomotion
-#endif  // TITATI_CONTROLLER__TITATI_CONTROLLER_NODE_HPP_
+}  // namespace hotdog_locomotion
+
+#endif  // HOTDOG_CONTROLLER__ROS_BRIDGE__HOTDOG_CONTROLLER_PLUGIN_HPP_

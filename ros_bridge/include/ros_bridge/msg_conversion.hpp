@@ -12,7 +12,10 @@
 #include "sim_utilities/visualization_data.hpp"
 #include "command_interface/command_interface.hpp"
 
-namespace msg_conversion {
+namespace hotdog_locomotion
+{
+namespace msg_conversion
+{
 
 static inline VectorNavData ConvertToVectorNavData(const float* quat, const float* gyro, const float* accl)
 {
@@ -144,5 +147,7 @@ static inline SpiData ConvertToSpiData(const sopu_msgs::msg::MotorStatus& motor_
 }
 
 }  // namespace msg_conversion
+
+}  // namespace hotdog_locomotion
 
 #endif  // MSG_CONVERSION_HPP_

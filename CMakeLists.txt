@@ -10,6 +10,7 @@ project(hotdog_controller)
 # 防止源码被更改和源码目录内编译
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
 endif()
@@ -19,13 +20,14 @@ set(CMAKE_COLOR_MAKEFILE ON)
 set(BUILD_TYPE_RELEASE TRUE)
 set(CMAKE_CXX_STANDARD 14)
 
+option(BUILD_SIMULATOR "Do not build simulator" ON)
+option(BUILD_HARDWARE "Build hot dog hardware driver" ON)
+option(BUILD_CONTROL "Build hot dog controller" ON)
 option(ONBOARD_BUILD "Use compiler flags for computer on robot" OFF)
 option(BUILD_FACTORY "Build production test tools for factory" OFF)
 option(BUILD_ROS "Build hot dog for ROS2" ON)
 
-
-
-# 识别处理器架构
+# Find target processor type
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64.*|x86_64.*|AMD64.*")
   set(X86_64 1)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686.*|i386.*|x86.*")
@@ -34,7 +36,6 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64.*|AARCH64.*|arm64.*|ARM64.*)")
   set(AARCH64 1)
 endif()
 
-# 编译选项
 if(ONBOARD_BUILD)
   add_compile_definitions(ONBOARD_BUILD=1)
   set(CMAKE_CXX_FLAGS "-O3 -s -no-pie -Wall \
@@ -63,31 +64,64 @@ else()
   message("**** Onboard Build disabled ****")
 endif()
 
-# ROS2支持
-if(BUILD_ROS)
-  find_package(ament_cmake REQUIRED)
-  find_package(ament_cmake_auto REQUIRED)
-  find_package(controller_interface REQUIRED)
-  find_package(nav_msgs REQUIRED)
-  find_package(tf2 REQUIRED)
-  find_package(tf2_geometry_msgs REQUIRED)
-  find_package(generate_parameter_library REQUIRED)
-  find_package(sopu_msgs REQUIRED)
-endif()
+# package for ROS2 colcon build
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
 
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sopu_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(controller_interface REQUIRED)
+find_package(generate_parameter_library REQUIRED)
 pluginlib_export_plugin_description_file(controller_interface hotdog_controller_plugin.xml)
 
-# =================== common模块合并 ===================
-SET (THIS_COM "${PROJECT_SOURCE_DIR}/" )
-configure_file(${CMAKE_SOURCE_DIR}/common/config.h.cmake
-  ${CMAKE_BINARY_DIR}/Configuration.h)
+set(ros_dependencies
+  rclcpp
+  tf2
+  tf2_eigen
+  tf2_geometry_msgs
+  tf2_ros
+  sensor_msgs
+  nav_msgs
+  geometry_msgs
+  sopu_msgs
+  visualization_msgs
+  pluginlib
+  controller_interface
+  generate_parameter_library
+)
 
-# 查找依赖
+# =================== 第三方库 ===================
 find_package(Eigen3 3.4.0 EXACT REQUIRED)
 find_package(lcm REQUIRED)
+find_package(glog REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(yaml-cpp 0.6.3 EXACT REQUIRED)
 
-# include路径
+set(third_party_dependencies
+  Eigen3
+  lcm
+  glog::glog
+  OpenGL
+  yaml-cpp
+)
+
+# =================== common模块合并 ===================
+# 生成Configuration.h
+SET (THIS_COM "${PROJECT_SOURCE_DIR}/" )
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/common/config.h.cmake
+  ${CMAKE_BINARY_DIR}/Configuration.h)
+
+# common include路径
 include_directories(
   ${EIGEN3_INCLUDE_DIRS}
   "${CMAKE_SOURCE_DIR}/common/include"
@@ -100,21 +134,14 @@ include_directories(
 )
 
 # generate parameter listener hpp file
-if(BUILD_ROS)
-  generate_parameter_library(hotdog_controller_parameters
-    config/hotdog_controller_parameters.yaml
-  )
-  include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-endif()
+generate_parameter_library(hotdog_controller_parameters
+  config/hotdog_controller_parameters.yaml
+)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-if(BUILD_ROS)
-  include_directories("/usr/local/include/yaml-cpp")
-endif()
-
-# 源码
 file(GLOB_RECURSE common_sources "common/src/*.cpp")
 
-# 添加第三方子库
+# 添加common第三方子库
 add_subdirectory(common/third_party/ParamHandler)
 add_subdirectory(common/third_party/cpptoml)
 add_subdirectory(common/lcm_type)
@@ -129,143 +156,102 @@ target_link_libraries(common
   cpptoml
 )
 
-# =================== control库相关 ===================
-find_package(glog REQUIRED)
-find_package(OpenGL REQUIRED)
+install(
+  TARGETS common
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
+# =================== control库相关 ===================
 file(GLOB_RECURSE control_sources "control/src/*.cpp")
-file(GLOB_RECURSE user_sources "control/user/*.cpp")
 file(GLOB_RECURSE third_party_sources "control/third_party/*.cpp")
-file(GLOB_RECURSE simbridge_sources "simbridge/src/*.cpp")
 file(GLOB_RECURSE hardware_sources "hardware/src/*.cpp")
 file(GLOB_RECURSE factory_sources "factory/src/*.cpp")
 file(GLOB_RECURSE simulator_sources "simulator/src/*.cpp")
 
 include_directories(
-  "./"
   "control/include"
   "control/include/control"
   "control/third_party"
-  "control/user"
-  "simbridge/include"
+  "ros_bridge/include"
   "common/include"
   "${CMAKE_CURRENT_SOURCE_DIR}"
   SYSTEM "control/third_party/qpOASES/include"
   "${CMAKE_SOURCE_DIR}/control/include"
   "${CMAKE_SOURCE_DIR}/common/third_party"
-  "${CMAKE_SOURCE_DIR}/simbridge/include"
+  "${CMAKE_SOURCE_DIR}/ros_bridge/include"
   ${GLOG_INCLUDE_DIRS}
   ${OPENGL_INCLUDE_DIR}
 )
 
 # control库
-if(control_sources)
-  add_library(control SHARED ${control_sources} ${user_sources} ${third_party_sources} ${simbridge_sources} ${factory_sources} ${simulator_sources})
-  target_link_libraries(control
-    pthread
-    lcm
-    param_handler
-    qpOASES
-    Goldfarb_Optimizer
-    common
-    glog::glog
-  )
-  if(BUILD_ROS)
-    target_link_libraries(control hotdog_controller_parameters) # 关键：链接参数库
-    ament_target_dependencies(control controller_interface nav_msgs tf2 tf2_geometry_msgs sopu_msgs)
-  endif()
-  if(CMAKE_SYSTEM_NAME MATCHES Linux)
-    target_link_libraries(control rt)
-  endif()
-  
-  # ====== 这里是新增的 install 规则 ======
-  install(
-    TARGETS control
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-  )
-
-  
+add_library(control SHARED ${control_sources} ${third_party_sources} ${factory_sources} ${simulator_sources})
+target_link_libraries(control
+  pthread
+  lcm
+  param_handler
+  qpOASES
+  Goldfarb_Optimizer
+  common
+  glog::glog
+)
+target_link_libraries(control hotdog_controller_parameters)
+ament_target_dependencies(control controller_interface nav_msgs tf2 tf2_geometry_msgs sopu_msgs)
+if(CMAKE_SYSTEM_NAME MATCHES Linux)
+  target_link_libraries(control rt)
 endif()
 
-add_subdirectory(control/third_party)
-
-
-# =================== 其它子目录管理 ===================
-if(ONBOARD_BUILD)
-  add_subdirectory(hardware)
-  if (EXISTS "${CMAKE_SOURCE_DIR}/factory" AND BUILD_FACTORY)
-    add_subdirectory(factory)
-  endif()
-endif()
-
-# 工厂相关自定义target
-if(ONBOARD_BUILD AND BUILD_FACTORY)
-  add_custom_target(version
-    COMMAND ./scripts/get_git_hash.sh
-    ${PROJECT_BINARY_DIR}/version.txt
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  )
-
-  add_custom_target(run_pack_script
-    COMMAND ./scripts/pack_runnable.sh
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  )
-
-  add_dependencies(run_pack_script
-    version
-    # hotdog_control
-    manager
-    ${TEST_TARGETS}
-  )
-
-  add_custom_target(final_package ALL)
-  add_dependencies(final_package run_pack_script)
-endif()
-
-# =================== hotdog_controller 插件库（ROS2控制器插件） ===================
-if(BUILD_ROS)
-  # 假设你的控制器插件主文件在 control/src/hotdog_controller_node.cpp
-  # 如有其他相关 cpp，也请一并添加
-  file(GLOB hotdog_controller_plugin_sources
-    "control/src/hotdog_controller_node.cpp"
-    # "control/src/your_other_controller_src.cpp"
-  )
-
-  ament_auto_add_library(hotdog_controller SHARED
-    ${hotdog_controller_plugin_sources}
-  )
-
-  target_link_libraries(hotdog_controller
-    control
-    common
-    hotdog_controller_parameters
-    ${GLOG_LIBRARIES}
-    # 如有其他依赖库也可加在这里
-  )
-
-  ament_target_dependencies(hotdog_controller
-    controller_interface
-    nav_msgs
-    tf2
-    tf2_geometry_msgs
-  )
-
-  # 导出插件描述文件，确保 hotdog_controller_plugin.xml 在工程根目录下
-  pluginlib_export_plugin_description_file(controller_interface hotdog_controller_plugin.xml)
-
-  install(TARGETS hotdog_controller
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
-  )
-  install(
-  TARGETS Goldfarb_Optimizer
+# ====== 这里是新增的 install 规则 ======
+install(
+  TARGETS control
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+add_subdirectory(control/third_party)
+
+# =================== hotdog_controller 插件库（ROS2控制器插件） ===================
+
+file(GLOB hotdog_controller_plugin_sources
+  "ros_bridge/src/*.cpp"
+)
+
+ament_auto_add_library(hotdog_controller SHARED
+  ${hotdog_controller_plugin_sources}
+)
+
+target_link_libraries(hotdog_controller
+  control
+  common
+  hotdog_controller_parameters
+  ${GLOG_LIBRARIES}
+  # 如有其他依赖库也可加在这里
+)
+
+ament_target_dependencies(hotdog_controller
+  controller_interface
+  nav_msgs
+  tf2
+  tf2_geometry_msgs
+)
+
+# 导出插件描述文件，确保 hotdog_controller_plugin.xml 在工程根目录下
+pluginlib_export_plugin_description_file(controller_interface hotdog_controller_plugin.xml)
+
+install(TARGETS hotdog_controller
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+TARGETS Goldfarb_Optimizer
+ARCHIVE DESTINATION lib
+LIBRARY DESTINATION lib
+RUNTIME DESTINATION bin
+)
+
 install(
   TARGETS common
   ARCHIVE DESTINATION lib
@@ -278,17 +264,12 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-endif()
 
 # =================== 安装 launch 和 config 目录 ===================
-if(BUILD_ROS)
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
-    install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
-  endif()
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config")
-    install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
-  endif()
-  ament_package()
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/launch")
+  install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 endif()
-
-
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/config")
+  install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
+endif()
+ament_package()

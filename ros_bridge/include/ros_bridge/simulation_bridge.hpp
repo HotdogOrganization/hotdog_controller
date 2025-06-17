@@ -15,6 +15,9 @@
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
 
+namespace hotdog_locomotion
+{
+
 /**
  * @brief The SimulationBridge runs a RobotController and connects it to a
  * Simulator, using shared memory. It is the simulation version of the HardwareBridge.
@@ -90,5 +93,7 @@ private:
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;
 };
+
+}  // namespace hotdog_locomotion
 
 #endif  // SIMULATION_BRIDGE_HPP_

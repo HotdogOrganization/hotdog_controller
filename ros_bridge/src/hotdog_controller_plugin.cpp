@@ -13,15 +13,12 @@
 // limitations under the License.
 #include "pluginlib/class_list_macros.hpp"
 
-#include "hotdog_controller/hotdog_controller_node.hpp"
-#include "msg_conversion.hpp"
+#include "ros_bridge/hotdog_controller_plugin.hpp"
+#include "ros_bridge/msg_conversion.hpp"
 
 namespace hotdog_locomotion
 {
 HotdogControllerPlugin::HotdogControllerPlugin() {}
-
-
-
 
 controller_interface::CallbackReturn HotdogControllerPlugin::on_init()
 {
@@ -522,7 +519,7 @@ void HotdogControllerPlugin::setup_state_estimate()
 
 // }
 
-}  // namespace tita_locomotion
+}  // namespace hotdog_locomotion
 
 #include "class_loader/register_macro.hpp"
 
