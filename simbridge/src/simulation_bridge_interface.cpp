@@ -12,11 +12,24 @@ SimulationBridgeInterface::~SimulationBridgeInterface() {
 void SimulationBridgeInterface::Run(const float* motor_pos, const float* motor_vel, const float* motor_tor, const float* quat, const float* gyro, const float* accl, SpiCommand &spi_command_,JoyData &joydata)
 {
 
+//key
+    bridge_->gamepadCommand.a = joydata.buttons[0];//t
+    bridge_->gamepadCommand.b = joydata.buttons[1];//y
+    bridge_->gamepadCommand.x = joydata.buttons[2];//e
+    bridge_->gamepadCommand.y = joydata.buttons[3];//r
 
-    bridge_->gamepadCommand.a = joydata.buttons[2];//t
-    bridge_->gamepadCommand.b = joydata.buttons[3];//y
-    bridge_->gamepadCommand.x = joydata.buttons[0];//e
-    bridge_->gamepadCommand.y = joydata.buttons[1];//r
+//direction
+    bridge_->gamepadCommand.xyz[0] = joydata.axes[0];//x
+    bridge_->gamepadCommand.xyz[1] = joydata.axes[1];//y
+    bridge_->gamepadCommand.xyz[2] = joydata.axes[6];//z
+
+    bridge_->gamepadCommand.rpy[0] = joydata.axes[2];//roll pisition
+    bridge_->gamepadCommand.rpy[1] = joydata.axes[3];//pich pisition
+    bridge_->gamepadCommand.rpy[2] = joydata.axes[4];//yaw pisition
+
+    bridge_->gamepadCommand.yaw_direction = joydata.axes[5];//yaw direction
+
+
 
     for(int leg = 0; leg < 4; ++leg) 
     {
