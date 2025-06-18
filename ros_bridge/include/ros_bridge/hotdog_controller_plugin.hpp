@@ -54,6 +54,8 @@
 #include "hotdog_controller.hpp"
 #include "ros_bridge/simulation_bridge.hpp"
 
+#include "sopu_msgs/msg/motor_status.hpp"
+#include "sopu_msgs/msg/motor_command.hpp"
 
 // #include "task/Task.hpp"
 namespace hotdog_locomotion
@@ -113,6 +115,12 @@ protected:
   rclcpp::TimerBase::SharedPtr odom_timer_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster_;
   
+  rclcpp::Publisher<sopu_msgs::msg::MotorStatus>::SharedPtr motor_status_publisher_;
+  rclcpp::Publisher<sopu_msgs::msg::MotorCommand>::SharedPtr motor_command_publisher_;
+
+  void publish_motor_status(const SpiData & spi_data);
+  void publish_motor_command(const SpiCommand & spi_command);
+
 protected:
   std::vector<std::shared_ptr<Joint>> joints_;
   std::vector<std::string> joint_names_;

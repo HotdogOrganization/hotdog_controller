@@ -77,6 +77,15 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
 
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+  
+  motor_status_publisher_
+    = get_node()->create_publisher<sopu_msgs::msg::MotorStatus>(
+      "motor_status", rclcpp::SensorDataQoS().reliable());
+
+  motor_command_publisher_ =
+    get_node()->create_publisher<sopu_msgs::msg::MotorCommand>(
+      "motor_command", rclcpp::SensorDataQoS().reliable());
+
   odom_timer_ = get_node()->create_wall_timer(
     std::chrono::milliseconds(100), std::bind(&HotdogControllerPlugin::odom_cb, this));
   odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(get_node());    
@@ -291,8 +300,6 @@ void HotdogControllerPlugin::joy_cb(
     joy_data_.buttons = msg->buttons;
   }
   is_joy_received_ = true;
-
-  std::cout << "[HotdogControllerPlugin] Joy data received: " << std::endl;
 }
 
 void HotdogControllerPlugin::odom_cb()
@@ -330,6 +337,24 @@ void HotdogControllerPlugin::odom_cb()
   // odom_msg.twist.twist.angular.z = controlData_->state_estimate->omegaWorld(Z);
   odom_msg.twist.covariance = {};
   odom_publisher_->publish(odom_msg);
+}
+
+void HotdogControllerPlugin::publish_motor_status(const SpiData & spi_data)
+{
+  sopu_msgs::msg::MotorStatus motor_status_msg =
+              msg_conversion::ConvertToMotorStatusMsg(spi_data);
+  motor_status_msg.header.stamp = rclcpp::Clock().now();
+
+  motor_status_publisher_->publish(motor_status_msg);
+}
+
+void HotdogControllerPlugin::publish_motor_command(const SpiCommand & spi_command)
+{
+  sopu_msgs::msg::MotorCommand motor_command_msg =
+              msg_conversion::ConvertToMotorCommandMsg(spi_command);
+  motor_command_msg.header.stamp = rclcpp::Clock().now();
+
+  motor_command_publisher_->publish(motor_command_msg);
 }
 
 controller_interface::return_type HotdogControllerPlugin::update(
@@ -427,6 +452,9 @@ void HotdogControllerPlugin::mainLoopThread()
     simulation_bridge_->SetVectorNavData(vector_nav_data);
 
     simulation_bridge_->Run();
+
+    publish_motor_status(motor_status);
+    publish_motor_command(spi_command);
 
     static int count = 0; // 在函数外或者类成员变量中声明，确保每次循环时不会被重置
     if (count < 1000) {

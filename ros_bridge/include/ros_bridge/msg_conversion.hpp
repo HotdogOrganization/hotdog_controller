@@ -54,7 +54,7 @@ static inline VectorNavData ConvertToVectorNavData(const sensor_msgs::msg::Imu& 
   return vector_nav_data;
 }
 
-static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommand(const SpiCommand& spi_command) {
+static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommandMsg(const SpiCommand& spi_command) {
   sopu_msgs::msg::MotorCommand motor_command;
   for (int i = 0; i < 4; ++i) {
     motor_command.q_des_abad[i] = spi_command.q_des_abad[i];
@@ -73,7 +73,7 @@ static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommand(const SpiComman
   return motor_command;
 }
 
-static inline sopu_msgs::msg::MotorStatus ConvertToMotorStatus(const SpiData& spi_data) {
+static inline sopu_msgs::msg::MotorStatus ConvertToMotorStatusMsg(const SpiData& spi_data) {
   sopu_msgs::msg::MotorStatus motor_status;
   for (int i = 0; i < 4; ++i) {
     motor_status.q_abad[i] = spi_data.q_abad[i];
