@@ -47,7 +47,7 @@ public:
     vector_nav_data_ = vector_nav_data;
   }
   void SetGamepadCommand(const GamepadCommand& gamepad_command) {
-    gamepadCommand = gamepad_command;
+    gamepad_command_ = gamepad_command;
   }
 
   const SpiData& GetSpiData() const {
@@ -60,7 +60,7 @@ public:
     return vector_nav_data_;
   }
   const GamepadCommand& GetGamepadCommand() const {
-    return gamepadCommand;
+    return gamepad_command_;
   }
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
@@ -86,7 +86,7 @@ private:
   SpiData                         spi_data_;
   SpiCommand                      spi_command_;
   VectorNavData                   vector_nav_data_;
-  GamepadCommand                  gamepadCommand;
+  GamepadCommand                  gamepad_command_;
   VisualizationData               visualization_data_;
 
   // ComplementaryFilter imu_filter_;

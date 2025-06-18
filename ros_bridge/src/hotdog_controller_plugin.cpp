@@ -287,6 +287,7 @@ void HotdogControllerPlugin::joy_cb(
 {
   joy_data_.axes = msg->axes;
   joy_data_.buttons = msg->buttons;
+  // std::cout << "[HotdogControllerPlugin] Joy data received: " << std::endl;
 }
 
 void HotdogControllerPlugin::odom_cb()
@@ -392,10 +393,28 @@ void HotdogControllerPlugin::mainLoopThread()
   // 后续直接调用
   if (simulation_bridge_) {
     GamepadCommand gamepad_command;
+    //key
     gamepad_command.a = joy_data_.buttons[2]; // t
     gamepad_command.b = joy_data_.buttons[3]; // y
     gamepad_command.x = joy_data_.buttons[0]; // e
     gamepad_command.y = joy_data_.buttons[1]; // r
+
+    // std::cout << gamepad_command.a << " " << gamepad_command.b << " "
+    //           << gamepad_command.x << " " << gamepad_command.y << std::endl;
+
+    //direction
+    gamepad_command.xyz[0] = joy_data_.axes[0];//x
+    gamepad_command.xyz[1] = joy_data_.axes[1];//y
+    gamepad_command.xyz[2] = joy_data_.axes[6];//z
+
+    gamepad_command.rpy[0] = joy_data_.axes[2];//roll pisition
+    gamepad_command.rpy[1] = joy_data_.axes[3];//pich pisition
+    gamepad_command.rpy[2] = joy_data_.axes[4];//yaw pisition
+    // std::cout << "xyz: " << gamepad_command.xyz[0] << ", "
+    //           << gamepad_command.xyz[1] << ", " << gamepad_command.xyz[2] << std::endl;
+    // std::cout << "rpy: " << gamepad_command.rpy[0] << ", "
+    //           << gamepad_command.rpy[1] << ", " << gamepad_command.rpy[2] << std::endl;
+    // gamepad_command.yaw_direction = joy_data_.axes[5];//yaw direction
 
     simulation_bridge_->SetGamepadCommand(gamepad_command);
     SpiCommand spi_command = simulation_bridge_->GetSpiCommand();
