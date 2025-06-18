@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "controller_interface/controller_interface.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
@@ -151,6 +152,9 @@ protected: // TODO:
 
   std::unique_ptr<SimulationBridge> simulation_bridge_;
   std::unique_ptr<RobotController> hotdog_controller_;
+  
+  std::mutex joy_data_mutex_;
+  bool is_joy_received_ = false;
 };
 
 // class CheaterHotdogControllerPlugin : public HotdogControllerPlugin
