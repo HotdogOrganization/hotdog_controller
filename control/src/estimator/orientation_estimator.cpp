@@ -50,7 +50,10 @@ template < typename T > void VectorNavOrientationEstimator< T >::Run() {
     this->state_estimator_data_.result->orientation = ori::QuatProduct( this->state_estimator_data_.result->orientation, ori_cali_ );
 
     this->state_estimator_data_.result->rpy = ori::QuatToRPY( this->state_estimator_data_.result->orientation );
-
+    // std::cout << "RPY: " 
+    //           << this->state_estimator_data_.result->rpy(0) << ", "
+    //           << this->state_estimator_data_.result->rpy(1) << ", "
+    //           << this->state_estimator_data_.result->rpy(2) << std::endl;
     this->state_estimator_data_.result->world2body_rotation_matrix = ori::QuaternionToRotationMatrix( this->state_estimator_data_.result->orientation );
 
     this->state_estimator_data_.result->angular_velocity_in_body_frame = this->state_estimator_data_.vector_nav_data->gyro.template cast< T >();

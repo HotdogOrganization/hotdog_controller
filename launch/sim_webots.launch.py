@@ -14,7 +14,7 @@ from launch.actions import OpaqueFunction
 import xacro
 
 # nn = "hxt"
-robot_name = "hotdog_new"
+robot_name = "hotdog"
 
 
 def launch_setup(context, *args, **kwargs):
