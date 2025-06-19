@@ -419,7 +419,7 @@ void HotdogControllerPlugin::mainLoopThread()
       //           << gamepad_command.xyz[1] << ", " << gamepad_command.xyz[2] << std::endl;
       // std::cout << "rpy: " << gamepad_command.rpy[0] << ", "
       //           << gamepad_command.rpy[1] << ", " << gamepad_command.rpy[2] << std::endl;
-      // gamepad_command.yaw_direction = joy_data_.axes[5];//yaw direction
+      gamepad_command.yaw_direction = joy_data_.axes[5];//yaw direction
 
       simulation_bridge_->SetGamepadCommand(gamepad_command);
     }
