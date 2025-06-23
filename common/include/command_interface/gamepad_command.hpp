@@ -23,6 +23,8 @@ struct GamepadCommand {
     bool leftBumper, rightBumper, leftTriggerButton, rightTriggerButton, back, start, a, b, x, y, leftStickButton, rightStickButton, logitechButton;
 
     Vec2< float > leftStickAnalog, rightStickAnalog;
+    Vec3< float > rpy, xyz;
+    float yaw_direction;
     float         leftTriggerAnalog, rightTriggerAnalog;
 
     /**

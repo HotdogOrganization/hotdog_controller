@@ -55,6 +55,10 @@ public:
     bool                    enable_low_power_ = false;
     void                    LCMPublishByThread();
 
+    const localization_lcmt& GetGlobalToRobotLcm() const {
+        return global_to_robot_lcmt_;
+    }
+
 private:
     int iter_             = 0;
     int unresponce_count_ = 0;

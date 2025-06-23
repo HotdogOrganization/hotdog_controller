@@ -162,12 +162,13 @@ void SimulationBridge::RunRobotControl()
 		std::cout << first_controller_run_ << std::endl;
 		LoadControlParametersFromFiles();
 		InitRobotRunner();
-		// robot_runner_->Init();
+		robot_runner_->Init();
 		first_controller_run_ = false;
 	}
-	// cmd_interface_.ProcessGamepadCommand( gamepadCommand);
-
-	// robot_runner_->Run();
+	cmd_interface_.ProcessGamepadCommand(gamepad_command_);
+	// std::cout << "Gamepad command processed" << std::endl;
+  global_to_robot_lcmt_ = robot_runner_->GetGlobalToRobotLcm();
+	robot_runner_->Run();
 }
 
 }  // namespace hotdog_locomotion

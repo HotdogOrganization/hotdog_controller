@@ -8,8 +8,8 @@
 
 #include "convex_mpc/convex_mpc_loco_gaits.hpp"
 
-// #define DRAW_DEBUG_SWINGS
-// #define DRAW_DEBUG_PATH
+#define DRAW_DEBUG_SWINGS
+#define DRAW_DEBUG_PATH
 // #define USE_TERRAIN_DETECTER
 
 // #define DEV_MODE
@@ -3296,6 +3296,11 @@ void ConvexMpcLocoGaits::DrawSwingPath( ControlFsmData< float >& data, int foot_
     actualSphere->radius   = 0.02;
     goalSphere->color      = { 0.2, 1, 0.2, 0.7 };
     actualSphere->color    = { 0.8, 0.2, 0.2, 0.7 };
+
+    auto* hipSphere = data.visualization_data->AddSphere();
+    hipSphere->position = state_est_.position + state_est_.world2body_rotation_matrix.transpose() * robot_model_->GetHipLocation( foot );
+    hipSphere->radius         = 0.02;
+    hipSphere->color          = { 1.0, 1.0, 1.0, 0.7 };
 }
 
 void ConvexMpcLocoGaits::DrawStancePath( ControlFsmData< float >& data, int foot_num ) {

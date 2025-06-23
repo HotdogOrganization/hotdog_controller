@@ -77,9 +77,24 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
 
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+  
+  motor_status_publisher_
+    = get_node()->create_publisher<sopu_msgs::msg::MotorStatus>(
+      "motor_status", rclcpp::SensorDataQoS().reliable());
+
+  motor_command_publisher_ =
+    get_node()->create_publisher<sopu_msgs::msg::MotorCommand>(
+      "motor_command", rclcpp::SensorDataQoS().reliable());
+
+  vis_marker_publisher_ =
+    get_node()->create_publisher<visualization_msgs::msg::MarkerArray>(
+      "mpc_marker", rclcpp::SensorDataQoS().reliable());
+
+  odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(get_node());
+
   odom_timer_ = get_node()->create_wall_timer(
-    std::chrono::milliseconds(100), std::bind(&HotdogControllerPlugin::odom_cb, this));
-  odom_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(get_node());    
+    std::chrono::milliseconds(10), std::bind(&HotdogControllerPlugin::odom_cb, this));
+
   return controller_interface::CallbackReturn::SUCCESS;
 }
 
@@ -285,24 +300,78 @@ void HotdogControllerPlugin::fsm_goal_cb(
 void HotdogControllerPlugin::joy_cb(
   const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-  joy_data_.axes = msg->axes;
-  joy_data_.buttons = msg->buttons;
+  {
+    std::lock_guard<std::mutex> lock(joy_data_mutex_);
+    joy_data_.axes = msg->axes;
+    joy_data_.buttons = msg->buttons;
+  }
+  is_joy_received_ = true;
 }
+
+// void Hotdog2HardwareBridge::PublishGlobalTransform(const localization_lcmt& global_to_robot_lcmt)
+// {
+//     geometry_msgs::msg::TransformStamped transform;
+
+//     //transform.setOrigin(tf::Vector3(msg->p[0], msg->p[1], msg->p[2]));
+//     transform.transform.translation.x = global_to_robot_lcmt.xyz[0];
+//     transform.transform.translation.y = global_to_robot_lcmt.xyz[1];
+//     transform.transform.translation.z = global_to_robot_lcmt.xyz[2];
+
+//     Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[0],Eigen::Vector3d::UnitX()));
+//     Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[1],Eigen::Vector3d::UnitY()));
+//     Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[2],Eigen::Vector3d::UnitZ()));
+
+//     Eigen::Quaterniond quaternion;
+//     quaternion = yawAngle * pitchAngle * rollAngle;
+
+//     tf2::Quaternion q(quaternion.x(), quaternion.y(), quaternion.z(),quaternion.w());
+//     geometry_msgs::msg::Quaternion geoQuat;
+//     tf2::convert(q, geoQuat);
+
+//     transform.transform.rotation = geoQuat;
+//     transform.header.stamp = rclcpp::Clock().now();
+//     transform.header.frame_id  = "vodom";
+//     transform.child_frame_id = "base_link";
+//     br_->sendTransform(transform);
+// }
 
 void HotdogControllerPlugin::odom_cb()
 {
+  if (simulation_bridge_== nullptr) {
+    RCLCPP_ERROR(get_node()->get_logger(), "Simulation bridge is not initialized.");
+    return;
+  }
+  const auto& global_to_robot_lcmt = simulation_bridge_->GetGlobalToRobotLcm();
+  // 发布全局坐标系到机器人坐标系的变换
+
   std::string frame_prefix_ = auto_declare<std::string>("frame_prefix", "");  // 默认空字符串
   // 发布TransformStamped消息
   geometry_msgs::msg::TransformStamped odom_trans;
   odom_trans.header.stamp = get_node()->now();
   odom_trans.header.frame_id = "odom";
-  // odom_trans.child_frame_id = frame_prefix + controlData_->params->base_name_;
-  // odom_trans.transform.translation.x = controlData_->state_estimate->position(X);
-  // odom_trans.transform.translation.y = controlData_->state_estimate->position(Y);
-  // odom_trans.transform.translation.z = controlData_->state_estimate->position(Z);
-  // odom_trans.transform.rotation = tf2::toMsg(tf2::Quaternion(
-  //   controlData_->state_estimate->orientation(QX), controlData_->state_estimate->orientation(QY), controlData_->state_estimate->orientation(QZ),
-  //   controlData_->state_estimate->orientation(QW)));
+  odom_trans.child_frame_id = "base_link";
+
+  odom_trans.transform.translation.x = global_to_robot_lcmt.xyz[0];
+  odom_trans.transform.translation.y = global_to_robot_lcmt.xyz[1];
+  odom_trans.transform.translation.z = global_to_robot_lcmt.xyz[2];
+  std::cout << "odom  translation: "
+            << odom_trans.transform.translation.x << ", "
+            << odom_trans.transform.translation.y << ", "
+            << odom_trans.transform.translation.z << std::endl;
+
+  Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[0],Eigen::Vector3d::UnitX()));
+  Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[1],Eigen::Vector3d::UnitY()));
+  Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[2],Eigen::Vector3d::UnitZ()));
+
+  Eigen::Quaterniond quaternion;
+  quaternion = yawAngle * pitchAngle * rollAngle;
+
+  tf2::Quaternion q(quaternion.x(), quaternion.y(), quaternion.z(),quaternion.w());
+  geometry_msgs::msg::Quaternion geoQuat;
+  tf2::convert(q, geoQuat);
+
+  odom_trans.transform.rotation = geoQuat;
+
   odom_broadcaster_->sendTransform(odom_trans);
 
   // 发布Odometry消息
@@ -324,6 +393,24 @@ void HotdogControllerPlugin::odom_cb()
   // odom_msg.twist.twist.angular.z = controlData_->state_estimate->omegaWorld(Z);
   odom_msg.twist.covariance = {};
   odom_publisher_->publish(odom_msg);
+}
+
+void HotdogControllerPlugin::publish_motor_status(const SpiData & spi_data)
+{
+  sopu_msgs::msg::MotorStatus motor_status_msg =
+              msg_conversion::ConvertToMotorStatusMsg(spi_data);
+  motor_status_msg.header.stamp = rclcpp::Clock().now();
+
+  motor_status_publisher_->publish(motor_status_msg);
+}
+
+void HotdogControllerPlugin::publish_motor_command(const SpiCommand & spi_command)
+{
+  sopu_msgs::msg::MotorCommand motor_command_msg =
+              msg_conversion::ConvertToMotorCommandMsg(spi_command);
+  motor_command_msg.header.stamp = rclcpp::Clock().now();
+
+  motor_command_publisher_->publish(motor_command_msg);
 }
 
 controller_interface::return_type HotdogControllerPlugin::update(
@@ -361,7 +448,6 @@ void HotdogControllerPlugin::setup_controller()
   hotdog_controller_ = std::make_unique<HotdogController>();
   RobotType robot_type = RobotType::CYBERDOG2;
   simulation_bridge_ = std::make_unique<SimulationBridge>(robot_type, hotdog_controller_.get());
-  RCLCPP_INFO(get_node()->get_logger(), "HotdogControllerPlugin setup_controller done");
 }
 
 
@@ -392,21 +478,69 @@ void HotdogControllerPlugin::mainLoopThread()
   // 后续直接调用
   if (simulation_bridge_) {
     GamepadCommand gamepad_command;
-    gamepad_command.a = joy_data_.buttons[2]; // t
-    gamepad_command.b = joy_data_.buttons[3]; // y
-    gamepad_command.x = joy_data_.buttons[0]; // e
-    gamepad_command.y = joy_data_.buttons[1]; // r
+    //key
+    if (is_joy_received_) {
+      std::lock_guard<std::mutex> lock(joy_data_mutex_);
+      gamepad_command.a = joy_data_.buttons[0]; // t
+      gamepad_command.b = joy_data_.buttons[1]; // y
+      gamepad_command.x = joy_data_.buttons[2]; // e
+      gamepad_command.y = joy_data_.buttons[3]; // r
 
-    simulation_bridge_->SetGamepadCommand(gamepad_command);
+      //direction
+      gamepad_command.xyz[0] = joy_data_.axes[0];//x
+      gamepad_command.xyz[1] = joy_data_.axes[1];//y
+      gamepad_command.xyz[2] = joy_data_.axes[6];//z
+
+      gamepad_command.rpy[0] = joy_data_.axes[2];//roll pisition
+      gamepad_command.rpy[1] = joy_data_.axes[3];//pich pisition
+      gamepad_command.rpy[2] = joy_data_.axes[4];//yaw pisition
+
+      gamepad_command.yaw_direction = joy_data_.axes[5];//yaw direction
+
+      simulation_bridge_->SetGamepadCommand(gamepad_command);
+    }
     SpiCommand spi_command = simulation_bridge_->GetSpiCommand();
 
     SpiData motor_status = msg_conversion::ConvertToSpiData(motor_pos_, motor_vel_, torque_);
     simulation_bridge_->SetSpiData(motor_status);
 
     VectorNavData vector_nav_data = msg_conversion::ConvertToVectorNavData(quat_, gyro_, accl_);
+    tf2::Quaternion q(
+      vector_nav_data.quat[0],
+      vector_nav_data.quat[1],
+      vector_nav_data.quat[2],
+      vector_nav_data.quat[3]
+    );
+
+    std::cout << "acc: " << vector_nav_data.accelerometer[0] << ", "
+              << vector_nav_data.accelerometer[1] << ", "
+              << vector_nav_data.accelerometer[2] << std::endl;
+    std::cout << "gyro: " << vector_nav_data.gyro[0]
+              << ", " << vector_nav_data.gyro[1]
+              << ", " << vector_nav_data.gyro[2] << std::endl;
+    std::cout << "quat: " << vector_nav_data.quat[0] << ", "
+              << vector_nav_data.quat[1] << ", "
+              << vector_nav_data.quat[2] << ", "
+              << vector_nav_data.quat[3] << std::endl;  
+    double roll, pitch, yaw;
+    tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    RCLCPP_INFO(get_node()->get_logger(), "VectorNav Euler: roll=%f, pitch=%f, yaw=%f", roll, pitch, yaw);
     simulation_bridge_->SetVectorNavData(vector_nav_data);
 
     simulation_bridge_->Run();
+
+    publish_motor_status(motor_status);
+    publish_motor_command(spi_command);
+
+    static int vis_pub_count = 0;
+    if (vis_pub_count % 50 == 0) {  // 10hz
+      auto vis_data = simulation_bridge_->GetVisualizationData();
+
+      visualization_msgs::msg::MarkerArray vis_marker_array;
+      msg_conversion::ConverToVisualizationMarker(vis_data, vis_marker_array,"odom", get_node()->now());
+
+      vis_marker_publisher_->publish(vis_marker_array);
+    }
 
     static int count = 0; // 在函数外或者类成员变量中声明，确保每次循环时不会被重置
     if (count < 1000) {
@@ -415,11 +549,11 @@ void HotdogControllerPlugin::mainLoopThread()
                             1.5 * (0 - motor_vel_[i*3+0]) 
                             + spi_command.tau_abad_ff[i];
     
-        hip_effort[i] = 60 * (-1.5 - (-motor_pos_[i*3+1])) +
+        hip_effort[i] = 60 * (-1.2 - (-motor_pos_[i*3+1])) +
                             1.5 * (0 - (-motor_vel_[i*3+1]))
                             + spi_command.tau_hip_ff[i];
     
-        knee_effort[i] = 60 * (2.7 - (-motor_pos_[i*3+2])) +
+        knee_effort[i] = 60 * (2.5 - (-motor_pos_[i*3+2])) +
                             1.5 * (0 - (-motor_vel_[i*3+2]))
                             + spi_command.tau_knee_ff[i];
       }

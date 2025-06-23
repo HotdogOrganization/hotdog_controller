@@ -15,6 +15,8 @@
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
 
+#include "header/lcm_type/localization_lcmt.hpp"
+
 namespace hotdog_locomotion
 {
 
@@ -47,7 +49,7 @@ public:
     vector_nav_data_ = vector_nav_data;
   }
   void SetGamepadCommand(const GamepadCommand& gamepad_command) {
-    gamepadCommand = gamepad_command;
+    gamepad_command_ = gamepad_command;
   }
 
   const SpiData& GetSpiData() const {
@@ -60,10 +62,13 @@ public:
     return vector_nav_data_;
   }
   const GamepadCommand& GetGamepadCommand() const {
-    return gamepadCommand;
+    return gamepad_command_;
   }
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
+  }
+  const localization_lcmt& GetGlobalToRobotLcm() const {
+    return global_to_robot_lcmt_;
   }
   
 private:
@@ -86,9 +91,9 @@ private:
   SpiData                         spi_data_;
   SpiCommand                      spi_command_;
   VectorNavData                   vector_nav_data_;
-  GamepadCommand                  gamepadCommand;
+  GamepadCommand                  gamepad_command_;
   VisualizationData               visualization_data_;
-
+  localization_lcmt               global_to_robot_lcmt_;
   // ComplementaryFilter imu_filter_;
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;

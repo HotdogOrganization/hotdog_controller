@@ -51,8 +51,8 @@ BEGIN_NAMESPACE_QPOASES
 QProblemB::QProblemB( )
 {
 	/* print copyright notice */
-	if (options.printLevel != PL_NONE)
-		printCopyrightNotice( );
+	// if (options.printLevel != PL_NONE)
+	// 	printCopyrightNotice( );
 
 	/* reset global message handler */
 	getGlobalMessageHandler( )->reset( );
@@ -100,8 +100,8 @@ QProblemB::QProblemB( int_t _nV, HessianType _hessianType, BooleanType allocDens
 	int_t i;
 
 	/* print copyright notice */
-	if (options.printLevel != PL_NONE)
-		printCopyrightNotice( );
+	// if (options.printLevel != PL_NONE)
+	// 	printCopyrightNotice( );
 
 	/* consistency check */
 	if ( _nV <= 0 )
