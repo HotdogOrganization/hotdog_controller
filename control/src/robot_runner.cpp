@@ -56,7 +56,7 @@ void RobotRunner::InitTask() {
     // Pointer passing
     robot_ctrl_->leg_controller_     = leg_controller_;
     robot_ctrl_->state_estimator_    = state_estimator_;
-    // robot_ctrl_->visualization_data_ = visualization_data_;
+    robot_ctrl_->visualization_data_ = visualization_data_;
     robot_ctrl_->control_parameters_ = control_parameters_;
     robot_ctrl_->command_            = &cmd_interface_->GetCommand();
 
@@ -77,7 +77,7 @@ void RobotRunner::RunTask() {
     intmax_t timestamp = clock::now().time_since_epoch().count();
     // Run the state estimator step
     state_estimator_->Run();
-    // visualization_data_->clear();
+    visualization_data_->clear();
     // publish state estimator fisrt, for SLAM system
     state_estimate_result_.setLcm( state_estimator_lcm_ );
     state_estimator_lcm_.timestamp  = timestamp;
