@@ -15,6 +15,8 @@
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
 
+#include "header/lcm_type/localization_lcmt.hpp"
+
 namespace hotdog_locomotion
 {
 
@@ -65,6 +67,9 @@ public:
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
   }
+  const localization_lcmt& GetGlobalToRobotLcm() const {
+    return global_to_robot_lcmt_;
+  }
   
 private:
   bool LoadControlParametersFromFiles();
@@ -88,7 +93,7 @@ private:
   VectorNavData                   vector_nav_data_;
   GamepadCommand                  gamepad_command_;
   VisualizationData               visualization_data_;
-
+  localization_lcmt               global_to_robot_lcmt_;
   // ComplementaryFilter imu_filter_;
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;
