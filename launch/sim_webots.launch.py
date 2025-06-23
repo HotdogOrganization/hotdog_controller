@@ -64,6 +64,24 @@ def launch_setup(context, *args, **kwargs):
         namespace=nn,
     )
 
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        parameters=[
+            {"use_sim_time": True},
+        ],
+        namespace=nn,
+        arguments=[
+            "-d",
+            os.path.join(
+                get_package_share_directory("hotdog_controller"),
+                "rviz",
+                "hotdog.rviz",
+            ),
+        ],
+    )
 
     robot_state_pub_node = Node(
         package="robot_state_publisher",
@@ -119,6 +137,7 @@ def launch_setup(context, *args, **kwargs):
                             joint_state_broadcaster_spawner,
                             imu_sensor_broadcaster_spawner,
                             tittai_controller_spawner,
+                            rviz_node,
                         ],
                     ),
                 )
