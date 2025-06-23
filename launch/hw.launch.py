@@ -24,7 +24,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 sys.path.insert(0, os.path.join(get_package_share_directory("tita_bringup"), "launch"))
 from launch_utils import tita_namespace
 
-robot_name = "wl4"
+robot_name = "hotdog"
 
 def generate_launch_description():
 
