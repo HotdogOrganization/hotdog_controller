@@ -130,9 +130,9 @@ template < typename T > void ControlFsm< T >::RunFsm() {
 
                 // Get the next FSM State by name
                 next_state_ = GetNextState( next_state_name_ );
-                LOG(INFO) << "[CONTROL FSM] transition fsm from " 
-                    << current_state_->state_string_ << " to " 
-                    << next_state_->state_string_;                // Print transition initialized info
+                std::cout << "INFO: [CONTROL FSM] transition fsm from "
+                        << current_state_->state_string_ << " to "
+                        << next_state_->state_string_ << std::endl;// Print transition initialized info
                 // PrintInfo(1);
                 current_state_->transition_data_.ban_trans_flag = 0;
             }
@@ -152,7 +152,7 @@ template < typename T > void ControlFsm< T >::RunFsm() {
 
         // Run the transition code while transition is occuring
         if ( operating_mode_ == FsmOperatingMode::kTransitioning ) {
-            LOG(INFO) << "operating_mode_ = kTransitioning ";
+            std::cout << "INFO: operating_mode_ = kTransitioning " << std::endl;
             transition_data_ = current_state_->Transition();
 
             // Check the robot state for safe operation
@@ -194,7 +194,7 @@ template < typename T > void ControlFsm< T >::RunFsm() {
         }
 
         if ( operating_mode_ == FsmOperatingMode::kEdamp ) {
-            LOG(INFO) << "operating_mode_ = kEdamp" ;
+            std::cout << "INFO: operating_mode_ = kEdamp" << std::endl;
             if ( current_state_->state_name_ != FsmStateName::kPureDamper ) {
                 if ( edamp_iter < 1 ) {
                     current_state_->OnExit();
@@ -222,9 +222,10 @@ template < typename T > void ControlFsm< T >::RunFsm() {
                 // Get the next FSM State by name
                 next_state_ = GetNextState( next_state_name_ );
                 if ( edamp_iter % 50 == 0 )
-                    LOG(INFO) << "[CONTROL FSM] transition fsm from " 
-                        << current_state_->state_string_ << " to " 
-                        << next_state_->state_string_;                }
+                    std::cout << "INFO: [CONTROL FSM] transition fsm from "
+                    << current_state_->state_string_ << " to "
+                    << next_state_->state_string_ << std::endl;
+                }
             else {
                 // Run the iteration for the current state normally
                 current_state_->Run();
@@ -237,7 +238,7 @@ template < typename T > void ControlFsm< T >::RunFsm() {
         }
 
         if ( operating_mode_ == FsmOperatingMode::kRobotLifted ) {
-            LOG(INFO) << "operating_mode_ = kRobotLifted" ;
+            std::cout << "INFO: operating_mode_ = kRobotLifted" << std::endl;
             if ( elift_iter < 1 ) {
                 current_state_->OnExit();
             }
@@ -269,10 +270,10 @@ template < typename T > void ControlFsm< T >::RunFsm() {
 
                 // Get the next FSM State by name
                 next_state_ = GetNextState( next_state_name_ );
-                LOG(INFO) << "[CONTROL FSM] transition fsm from " 
-                    << current_state_->state_string_ 
-                    << " to " 
-                    << next_state_->state_string_;
+                std::cout << "INFO: [CONTROL FSM] transition fsm from "
+                        << current_state_->state_string_
+                        << " to "
+                        << next_state_->state_string_ << std::endl;
             }
             else {
                 // Run the iteration for the current state normally
@@ -287,7 +288,7 @@ template < typename T > void ControlFsm< T >::RunFsm() {
     }
     else {  // if ESTOP
         if ( estop_iter++ % 2000 == 0 ) {
-            LOG(INFO) << "[CONTROL FSM] Robot is in ESTOP" ;
+            std::cout << "INFO: [CONTROL FSM] Robot is in ESTOP" << std::endl;
         }
         
         current_state_ = states_list_.passive;
@@ -580,13 +581,15 @@ template < typename T > void ControlFsm< T >::PrintInfo( int opt ) {
             // std::cout << "---------------------------------------------------------\n";
             // std::cout << "Iteration: " << iter_ << "\n";
             if ( operating_mode_ == FsmOperatingMode::kNormal ) {
-                LOG(INFO) << "[CONTROL FSM] Operating Mode: NORMAL in " << current_state_->state_string_;
+                std::cout << "INFO: [CONTROL FSM] Operating Mode: NORMAL in " << current_state_->state_string_ << std::endl;
             }
             else if ( operating_mode_ == FsmOperatingMode::kTransitioning ) {
-                LOG(INFO) << "[CONTROL FSM] Operating Mode: kTransitioning from " << current_state_->state_string_ << " to " << next_state_->state_string_;
+                std::cout << "INFO: [CONTROL FSM] Operating Mode: kTransitioning from "
+                        << current_state_->state_string_ << " to "
+                        << next_state_->state_string_ << std::endl;
             }
             else if ( operating_mode_ == FsmOperatingMode::kEstop ) {
-                LOG(INFO) << "[CONTROL FSM] Operating Mode: ESTOP\n";
+                std::cout << "INFO: [CONTROL FSM] Operating Mode: ESTOP" << std::endl;
             }
             std::cout << std::endl;
 

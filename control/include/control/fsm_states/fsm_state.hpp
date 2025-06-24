@@ -2,7 +2,6 @@
 #define FSM_STATE_HPP_
 
 #include <stdio.h>
-#include <glog/logging.h>
 #include "control_fsm_data.hpp"
 #include "robot_runner.hpp"
 #include "transition_data.hpp"

@@ -11,7 +11,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <glog/logging.h>
 
 #include "cpptoml.h"
 #include "dynamics/hotdog.hpp"

@@ -7,6 +7,7 @@
 
 #include <lcm/lcm-cpp.hpp>
 #include <qpOASES.hpp>
+#include <hxt.hpp>
 
 #include "cpp_types.hpp"
 #include "fsm_states/control_fsm_data.hpp"
@@ -14,35 +15,8 @@
 // #include "header/lcm_type/sim_command_t.hpp"
 
 
-struct sim_command_t
-{
-    int32_t command_number;
-    int32_t data_size;
-    std::vector<double> data;
-};
 
-struct qp_controller_data_t
-{
-	double exit_flag;	
-	double nWSR;
-	double cpu_time_microseconds;
-	double xOpt[12];
-	double p_des[3];
-	double p_act[3];
-	double v_des[3];
-	double v_act[3];
-	double O_err[3];
-	double omegab_des[3];
-	double omegab_act[3];
-	double lbA[20];
-	double ubA[20];
-	double C_times_f[20];
-	double b_control[6];
-	double b_control_Opt[6];
-	double active;	
-	double pfeet_des[12];
-	double pfeet_act[12];
-};
+
 
 class BalanceControllerLSM {
 public:

@@ -26,10 +26,6 @@
 //     float tau_des[12];
 // };
 
-struct motor_ctrl_state_lcmt {
-    int16_t err_flag;
-    float ctrl_topic_interval;
-};
 
 template < typename T > class FsmStateMotorCtrl : public FsmState< T > {
 public:

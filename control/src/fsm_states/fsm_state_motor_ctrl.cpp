@@ -25,7 +25,7 @@ template < typename T > void FsmStateMotorCtrl< T >::OnEnter() {
     firstRun_              = true;
     err_flag_              = err_flag_ | 0x02; // Need reset error first for safty
     wait_reconnect_        = 0;
-    LOG(INFO) << "[FSM MotorCtrl] On Enter";
+    std::cout << "INFO: [FSM MotorCtrl] On Enter" << std::endl;
     this->data_->robot_current_state->gait_id         = 0;
     this->data_->control_parameters->lcm_debug_switch = 1;
 }

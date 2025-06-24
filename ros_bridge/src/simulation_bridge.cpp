@@ -6,7 +6,6 @@
 
 #include <iostream>
 
-#include <glog/logging.h>
 
 #include "ros_bridge/simulation_bridge.hpp"
 #include "utilities/segfault_handler.hpp"

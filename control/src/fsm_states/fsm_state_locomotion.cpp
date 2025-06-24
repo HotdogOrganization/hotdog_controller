@@ -86,7 +86,7 @@ template < typename T > void FsmStateLocomotion< T >::OnEnter() {
     convex_mpc_motion_gaits_->Initialize( *this->data_ );
     convex_mpc_motion_gaits_->duration_mode_         = false;
     convex_mpc_motion_gaits_->gait_check_transition_ = true;
-    LOG(INFO) << "[FSM LOCOMOTION] On Enter";
+    std::cout << "INFO: [FSM LOCOMOTION] On Enter" << std::endl;
 }
 
 /**

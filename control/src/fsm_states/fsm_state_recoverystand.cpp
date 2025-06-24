@@ -93,15 +93,15 @@ template < typename T > void FSMStateRecoveryStand< T >::OnEnter() {
         // Hotdog2: 0.43*(0.12+0.174)=0.123
         if ( ( 0.42 * ( this->data_->quadruped->hip_link_length_ + this->data_->quadruped->knee_link_length_ ) < body_height ) && ( body_height < 0.45 ) ) {
 #endif
-            LOG(INFO) << "[RecoveryStand] body height is " << body_height << "; Stand Up";
+            std::cout << "INFO: [RecoveryStand] body height is " << body_height << "; Stand Up" << std::endl;
             flag_ = StandUp_;
         }
         else {
-            LOG(INFO) << "[RecoveryStand] body height is " << body_height << "; Folding legs";
+            std::cout << "INFO: [RecoveryStand] body height is " << body_height << "; Folding legs" << std::endl;
         }
     }
     else {
-        LOG(INFO) << "[RecoveryStand] UpsideDown (" << UpsideDown() << ")";
+        std::cout << "INFO: [RecoveryStand] UpsideDown (" << UpsideDown() << ")" << std::endl;
     }
     motion_start_iter_ = 0;
 }
@@ -115,7 +115,7 @@ template < typename T > bool FSMStateRecoveryStand< T >::OnRightLegConfig() {
         else
             RightLegConfigFlag[ leg ] = true;
     }
-    LOG(INFO) << "[RecoveryStand] legs can foldlegs: " << RightLegConfigFlag.transpose();
+    std::cout << "INFO: [RecoveryStand] legs can foldlegs: " << RightLegConfigFlag.transpose() << std::endl;
     if ( RightLegConfigFlag[ 0 ] && RightLegConfigFlag[ 1 ] && RightLegConfigFlag[ 2 ] && RightLegConfigFlag[ 3 ] )
         return true;
     else
@@ -620,10 +620,10 @@ template < typename T > void FSMStateRecoveryStand< T >::StandUp( const int& cur
 
         if ( curr_iter > standup_ramp_iter_ + stand_waitstable_ ) {
             if ( !this->ready_for_switch_ )
-                LOG(INFO) << "[RecoveryStand] Stand finish! first_stand_=" << static_cast<int>(first_stand_)
-                << " liedown_ok_=" << static_cast<int>(liedown_ok_)
-                << " gait_id=" << this->data_->command->gait_id
-                << " LieDown_flag_=" << static_cast<int>(LieDown_flag_);
+                std::cout << "INFO: [RecoveryStand] Stand finish! first_stand_=" << static_cast<int>(first_stand_)
+                        << " liedown_ok_=" << static_cast<int>(liedown_ok_)
+                        << " gait_id=" << this->data_->command->gait_id
+                        << " LieDown_flag_=" << static_cast<int>(LieDown_flag_) << std::endl;
             this->ready_for_switch_ = true;
             for ( size_t i( 0 ); i < 4; ++i ) {
                 initial_jpos[ i ] = this->data_->leg_controller->datas_[ i ].q;
@@ -680,7 +680,7 @@ template < typename T > void FSMStateRecoveryStand< T >::StandUp( const int& cur
 
 template < typename T > void FSMStateRecoveryStand< T >::LookUpOrDown( const int& curr_iter ) {
     if ( curr_iter <= 0 )
-        LOG(INFO) << "[RecoveryStand] Damping Fold Legs";
+        std::cout << "INFO: [RecoveryStand] Damping Fold Legs" << std::endl;
     Vec3< T > joint_kd;
     if ( curr_iter < damp_ramp_iter_ ) {
         for ( int leg( 0 ); leg < 4; leg++ ) {
@@ -707,7 +707,7 @@ template < typename T > void FSMStateRecoveryStand< T >::LookUpOrDown( const int
 
 template < typename T > void FSMStateRecoveryStand< T >::PrepareForFoldLegs( const int& curr_iter ) {
     if ( curr_iter <= 0 )
-        LOG(INFO) << "[RecoveryStand] Prepare For Fold Legs";
+        std::cout << "INFO: [RecoveryStand] Prepare For Fold Legs" << std::endl;
     int       _iner_iter       = 0;
     int       _first_step_iter = prepare_ramp_iter_ / 2;
     Vec3< T > right_fold_pos[ 4 ];
@@ -764,7 +764,7 @@ template < typename T > void FSMStateRecoveryStand< T >::FoldLegs( const int& cu
         LieDown_flag_ = 0;
 
     if ( curr_iter <= 0 ) {
-        LOG(INFO) << "[RecoveryStand] Fold Legs";
+        std::cout << "INFO: [RecoveryStand] Fold Legs" << std::endl;
         for ( size_t i( 0 ); i < 4; ++i )
             for ( size_t j( 0 ); j < 3; ++j ) {
                 diff = fabs( fold_jpos[ i ]( j ) - initial_jpos[ i ]( j ) );
