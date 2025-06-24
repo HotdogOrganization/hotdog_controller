@@ -294,34 +294,34 @@ template < typename T > void LegController< T >::UpdateCommand( SpiCommand* spi_
  * @param lcm_data lcm data
  * @param lcm_command lcm command
  */
-template < typename T > void LegController< T >::SetLcm( leg_control_data_lcmt* lcm_data, leg_control_command_lcmt* lcm_command ) {
-    for ( int leg = 0; leg < 4; leg++ ) {
-        for ( int axis = 0; axis < 3; axis++ ) {
-            int idx                        = leg * 3 + axis;
-            lcm_data->q[ idx ]             = datas_[ leg ].q[ axis ];
-            lcm_data->qd[ idx ]            = datas_[ leg ].qd[ axis ];
-            lcm_data->p[ idx ]             = datas_[ leg ].p[ axis ];
-            lcm_data->v[ idx ]             = datas_[ leg ].v[ axis ];
-            lcm_data->tau_est[ idx ]       = datas_[ leg ].tau_estimate[ axis ];
-            lcm_data->force_est[ idx ]     = datas_[ leg ].foot_force_actual[ axis ];
-            lcm_data->force_desired[ idx ] = datas_[ leg ].foot_force_desired[ axis ];
+// template < typename T > void LegController< T >::SetLcm( leg_control_data_lcmt* lcm_data, leg_control_command_lcmt* lcm_command ) {
+//     for ( int leg = 0; leg < 4; leg++ ) {
+//         for ( int axis = 0; axis < 3; axis++ ) {
+//             int idx                        = leg * 3 + axis;
+//             lcm_data->q[ idx ]             = datas_[ leg ].q[ axis ];
+//             lcm_data->qd[ idx ]            = datas_[ leg ].qd[ axis ];
+//             lcm_data->p[ idx ]             = datas_[ leg ].p[ axis ];
+//             lcm_data->v[ idx ]             = datas_[ leg ].v[ axis ];
+//             lcm_data->tau_est[ idx ]       = datas_[ leg ].tau_estimate[ axis ];
+//             lcm_data->force_est[ idx ]     = datas_[ leg ].foot_force_actual[ axis ];
+//             lcm_data->force_desired[ idx ] = datas_[ leg ].foot_force_desired[ axis ];
 
-            lcm_command->tau_ff[ idx ]       = commands_[ leg ].tau_feed_forward[ axis ];
-            lcm_command->f_ff[ idx ]         = commands_[ leg ].force_feed_forward[ axis ];
-            lcm_command->q_des[ idx ]        = commands_[ leg ].q_des[ axis ];
-            lcm_command->qd_des[ idx ]       = commands_[ leg ].qd_des[ axis ];
-            lcm_command->p_des[ idx ]        = commands_[ leg ].p_des[ axis ];
-            lcm_command->v_des[ idx ]        = commands_[ leg ].v_des[ axis ];
-            lcm_command->kp_cartesian[ idx ] = commands_[ leg ].kp_cartesian( axis, axis );
-            lcm_command->kd_cartesian[ idx ] = commands_[ leg ].kd_cartesian( axis, axis );
-            lcm_command->kp_joint[ idx ]     = commands_[ leg ].kp_joint( axis, axis );
-            lcm_command->kd_joint[ idx ]     = commands_[ leg ].kd_joint( axis, axis );
-        }
-        lcm_data->q_abad_limit[ leg ] = q_abad_limit_[ leg ];
-        lcm_data->q_hip_limit[ leg ]  = q_hip_limit_[ leg ];
-        lcm_data->q_knee_limit[ leg ] = q_knee_limit_[ leg ];
-    }
-}
+//             lcm_command->tau_ff[ idx ]       = commands_[ leg ].tau_feed_forward[ axis ];
+//             lcm_command->f_ff[ idx ]         = commands_[ leg ].force_feed_forward[ axis ];
+//             lcm_command->q_des[ idx ]        = commands_[ leg ].q_des[ axis ];
+//             lcm_command->qd_des[ idx ]       = commands_[ leg ].qd_des[ axis ];
+//             lcm_command->p_des[ idx ]        = commands_[ leg ].p_des[ axis ];
+//             lcm_command->v_des[ idx ]        = commands_[ leg ].v_des[ axis ];
+//             lcm_command->kp_cartesian[ idx ] = commands_[ leg ].kp_cartesian( axis, axis );
+//             lcm_command->kd_cartesian[ idx ] = commands_[ leg ].kd_cartesian( axis, axis );
+//             lcm_command->kp_joint[ idx ]     = commands_[ leg ].kp_joint( axis, axis );
+//             lcm_command->kd_joint[ idx ]     = commands_[ leg ].kd_joint( axis, axis );
+//         }
+//         lcm_data->q_abad_limit[ leg ] = q_abad_limit_[ leg ];
+//         lcm_data->q_hip_limit[ leg ]  = q_hip_limit_[ leg ];
+//         lcm_data->q_knee_limit[ leg ] = q_knee_limit_[ leg ];
+//     }
+// }
 
 template struct LegControllerCommand< double >;
 template struct LegControllerCommand< float >;

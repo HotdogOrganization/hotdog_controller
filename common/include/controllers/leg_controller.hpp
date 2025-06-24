@@ -3,8 +3,8 @@
 
 #include "cpp_types.hpp"
 #include "dynamics/quadruped.hpp"
-#include "header/lcm_type/leg_control_command_lcmt.hpp"
-#include "header/lcm_type/leg_control_data_lcmt.hpp"
+// #include "header/lcm_type/leg_control_command_lcmt.hpp"
+// #include "header/lcm_type/leg_control_data_lcmt.hpp"
 #include "sim_utilities/spine_board.hpp"
 
 /**
@@ -110,7 +110,7 @@ public:
         clear_error_ = enabled;
     };
 
-    void SetLcm( leg_control_data_lcmt* lcm_data, leg_control_command_lcmt* lcm_command );
+    // void SetLcm( leg_control_data_lcmt* lcm_data, leg_control_command_lcmt* lcm_command );
 
     LegControllerCommand< T > commands_[ 4 ];
     LegControllerData< T >    datas_[ 4 ];

@@ -5,7 +5,9 @@
 
 template < typename T >
 FsmStateMotorCtrl< T >::FsmStateMotorCtrl( ControlFsmData< T >* control_fsm_data )
-    : FsmState< T >( control_fsm_data, FsmStateName::kMotorCtrl, "motor_ctrl" ), motor_ctrl_state_lcm_( GetLcmUrlWithPort( 7667, 255 ) ) {
+    : FsmState< T >( control_fsm_data, FsmStateName::kMotorCtrl, "motor_ctrl" )
+    // , motor_ctrl_state_lcm_( GetLcmUrlWithPort( 7667, 255 ) ) 
+    {
     this->TurnOnAllSafetyChecks();
     this->check_desired_foot_position_ = false;
     this->check_safe_orientation_      = false;
@@ -13,9 +15,9 @@ FsmStateMotorCtrl< T >::FsmStateMotorCtrl( ControlFsmData< T >* control_fsm_data
     this->motion_progress_bar_         = 100;
     err_flag_                          = 0;
     for ( int j = 0; j < 12; j++ ) {
-        ctrl_zero_.kp_des[ j ]  = 0;
-        ctrl_zero_.kd_des[ j ]  = 0;
-        ctrl_zero_.tau_des[ j ] = 0;
+        // ctrl_zero_.kp_des[ j ]  = 0;
+        // ctrl_zero_.kd_des[ j ]  = 0;
+        // ctrl_zero_.tau_des[ j ] = 0;
     }
 }
 template < typename T > void FsmStateMotorCtrl< T >::OnEnter() {
@@ -62,7 +64,7 @@ template < typename T > void FsmStateMotorCtrl< T >::Run() {
         }
         if ( err_flag_ & 0x2 ) {  // Over 500ms
             wait_reconnect_++;
-            ctrl_ = ctrl_zero_;
+            // ctrl_ = ctrl_zero_;
             if ( wait_reconnect_ < 5000 ) {
                 // high damping mode
                 for ( int j = 0; j < 3; j++ )
@@ -130,9 +132,9 @@ template < typename T > void FsmStateMotorCtrl< T >::Run() {
         this->data_->leg_controller->commands_[ i ].kd_joint << ctrl_.kd_des[ i * 3 + 0 ], 0, 0, 0, ctrl_.kd_des[ i * 3 + 1 ], 0, 0, 0, ctrl_.kd_des[ i * 3 + 2 ];
         this->data_->leg_controller->commands_[ i ].tau_feed_forward << ctrl_.tau_des[ i * 3 + 0 ], ctrl_.tau_des[ i * 3 + 1 ], ctrl_.tau_des[ i * 3 + 2 ];
     }
-    ctrl_state_.err_flag            = err_flag_;
-    ctrl_state_.ctrl_topic_interval = time_diff;
-    motor_ctrl_state_lcm_.publish( "motor_ctrl_state", &ctrl_state_ );
+    // ctrl_state_.err_flag            = err_flag_;
+    // ctrl_state_.ctrl_topic_interval = time_diff;
+    // motor_ctrl_state_lcm_.publish( "motor_ctrl_state", &ctrl_state_ );
     // err_flag_:
     // bit0:lost control over 10ms warn, divide the tau and qd_des by (over_time/10.0)
     // bit1:lost control over 500ms err, enter high damping mode, kd=10

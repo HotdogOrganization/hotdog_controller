@@ -337,47 +337,47 @@ void HotdogControllerPlugin::joy_cb(
 
 void HotdogControllerPlugin::odom_cb()
 {
-  if (simulation_bridge_== nullptr) {
-    RCLCPP_ERROR(get_node()->get_logger(), "Simulation bridge is not initialized.");
-    return;
-  }
-  const auto& global_to_robot_lcmt = simulation_bridge_->GetGlobalToRobotLcm();
+  // if (simulation_bridge_== nullptr) {
+  //   RCLCPP_ERROR(get_node()->get_logger(), "Simulation bridge is not initialized.");
+  //   return;
+  // }
+  // const auto& global_to_robot_lcmt = simulation_bridge_->GetGlobalToRobotLcm();
   // 发布全局坐标系到机器人坐标系的变换
 
-  std::string frame_prefix_ = auto_declare<std::string>("frame_prefix", "");  // 默认空字符串
-  // 发布TransformStamped消息
-  geometry_msgs::msg::TransformStamped odom_trans;
-  odom_trans.header.stamp = get_node()->now();
-  odom_trans.header.frame_id = "odom";
-  odom_trans.child_frame_id = "base_link";
+  // std::string frame_prefix_ = auto_declare<std::string>("frame_prefix", "");  // 默认空字符串
+  // // 发布TransformStamped消息
+  // geometry_msgs::msg::TransformStamped odom_trans;
+  // odom_trans.header.stamp = get_node()->now();
+  // odom_trans.header.frame_id = "odom";
+  // odom_trans.child_frame_id = "base_link";
 
-  odom_trans.transform.translation.x = global_to_robot_lcmt.xyz[0];
-  odom_trans.transform.translation.y = global_to_robot_lcmt.xyz[1];
-  odom_trans.transform.translation.z = global_to_robot_lcmt.xyz[2];
-  std::cout << "odom  translation: "
-            << odom_trans.transform.translation.x << ", "
-            << odom_trans.transform.translation.y << ", "
-            << odom_trans.transform.translation.z << std::endl;
+  // odom_trans.transform.translation.x = global_to_robot_lcmt.xyz[0];
+  // odom_trans.transform.translation.y = global_to_robot_lcmt.xyz[1];
+  // odom_trans.transform.translation.z = global_to_robot_lcmt.xyz[2];
+  // std::cout << "odom  translation: "
+  //           << odom_trans.transform.translation.x << ", "
+  //           << odom_trans.transform.translation.y << ", "
+  //           << odom_trans.transform.translation.z << std::endl;
 
-  Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[0],Eigen::Vector3d::UnitX()));
-  Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[1],Eigen::Vector3d::UnitY()));
-  Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[2],Eigen::Vector3d::UnitZ()));
+  // Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[0],Eigen::Vector3d::UnitX()));
+  // Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[1],Eigen::Vector3d::UnitY()));
+  // Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(global_to_robot_lcmt.rpy[2],Eigen::Vector3d::UnitZ()));
 
-  Eigen::Quaterniond quaternion;
-  quaternion = yawAngle * pitchAngle * rollAngle;
+  // Eigen::Quaterniond quaternion;
+  // quaternion = yawAngle * pitchAngle * rollAngle;
 
-  tf2::Quaternion q(quaternion.x(), quaternion.y(), quaternion.z(),quaternion.w());
-  geometry_msgs::msg::Quaternion geoQuat;
-  tf2::convert(q, geoQuat);
+  // tf2::Quaternion q(quaternion.x(), quaternion.y(), quaternion.z(),quaternion.w());
+  // geometry_msgs::msg::Quaternion geoQuat;
+  // tf2::convert(q, geoQuat);
 
-  odom_trans.transform.rotation = geoQuat;
+  // odom_trans.transform.rotation = geoQuat;
 
-  odom_broadcaster_->sendTransform(odom_trans);
+  // odom_broadcaster_->sendTransform(odom_trans);
 
-  // 发布Odometry消息
-  nav_msgs::msg::Odometry odom_msg;
-  odom_msg.header.stamp = get_node()->now();
-  odom_msg.header.frame_id = "odom";
+  // // 发布Odometry消息
+  // nav_msgs::msg::Odometry odom_msg;
+  // odom_msg.header.stamp = get_node()->now();
+  // odom_msg.header.frame_id = "odom";
   // odom_msg.child_frame_id = frame_prefix + controlData_->params->base_name_;
   // odom_msg.pose.pose.position.x = controlData_->state_estimate->position(X);
   // odom_msg.pose.pose.position.y = controlData_->state_estimate->position(Y);
@@ -391,8 +391,8 @@ void HotdogControllerPlugin::odom_cb()
   // odom_msg.twist.twist.angular.x = controlData_->state_estimate->omegaWorld(X);
   // odom_msg.twist.twist.angular.y = controlData_->state_estimate->omegaWorld(Y);
   // odom_msg.twist.twist.angular.z = controlData_->state_estimate->omegaWorld(Z);
-  odom_msg.twist.covariance = {};
-  odom_publisher_->publish(odom_msg);
+  // odom_msg.twist.covariance = {};
+  // odom_publisher_->publish(odom_msg);
 }
 
 void HotdogControllerPlugin::publish_motor_status(const SpiData & spi_data)
@@ -512,19 +512,19 @@ void HotdogControllerPlugin::mainLoopThread()
       vector_nav_data.quat[3]
     );
 
-    std::cout << "acc: " << vector_nav_data.accelerometer[0] << ", "
-              << vector_nav_data.accelerometer[1] << ", "
-              << vector_nav_data.accelerometer[2] << std::endl;
-    std::cout << "gyro: " << vector_nav_data.gyro[0]
-              << ", " << vector_nav_data.gyro[1]
-              << ", " << vector_nav_data.gyro[2] << std::endl;
-    std::cout << "quat: " << vector_nav_data.quat[0] << ", "
-              << vector_nav_data.quat[1] << ", "
-              << vector_nav_data.quat[2] << ", "
-              << vector_nav_data.quat[3] << std::endl;  
+    // std::cout << "acc: " << vector_nav_data.accelerometer[0] << ", "
+    //           << vector_nav_data.accelerometer[1] << ", "
+    //           << vector_nav_data.accelerometer[2] << std::endl;
+    // std::cout << "gyro: " << vector_nav_data.gyro[0]
+    //           << ", " << vector_nav_data.gyro[1]
+    //           << ", " << vector_nav_data.gyro[2] << std::endl;
+    // std::cout << "quat: " << vector_nav_data.quat[0] << ", "
+    //           << vector_nav_data.quat[1] << ", "
+    //           << vector_nav_data.quat[2] << ", "
+    //           << vector_nav_data.quat[3] << std::endl;  
     double roll, pitch, yaw;
     tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    RCLCPP_INFO(get_node()->get_logger(), "VectorNav Euler: roll=%f, pitch=%f, yaw=%f", roll, pitch, yaw);
+    // RCLCPP_INFO(get_node()->get_logger(), "VectorNav Euler: roll=%f, pitch=%f, yaw=%f", roll, pitch, yaw);
     simulation_bridge_->SetVectorNavData(vector_nav_data);
 
     simulation_bridge_->Run();

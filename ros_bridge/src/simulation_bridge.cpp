@@ -167,7 +167,7 @@ void SimulationBridge::RunRobotControl()
 	}
 	cmd_interface_.ProcessGamepadCommand(gamepad_command_);
 	// std::cout << "Gamepad command processed" << std::endl;
-  global_to_robot_lcmt_ = robot_runner_->GetGlobalToRobotLcm();
+//   global_to_robot_lcmt_ = robot_runner_->GetGlobalToRobotLcm();
 	robot_runner_->Run();
 }
 

@@ -81,6 +81,6 @@ void RobotRunnerInterface::InitializeStateEstimator( bool cheaterMode ) {
     robot_runner_->InitializeStateEstimator( cheaterMode );
 }
 
-void RobotRunnerInterface::LCMPublishByThread() {
-    robot_runner_->LCMPublishByThread();
-}
+// void RobotRunnerInterface::LCMPublishByThread() {
+//     robot_runner_->LCMPublishByThread();
+// }
