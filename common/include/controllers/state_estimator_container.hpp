@@ -2,7 +2,7 @@
 #define STATE_ESTIMATOR_CONTAINER_HPP_
 
 #include "controllers/leg_controller.hpp"
-#include "header/lcm_type/state_estimator_lcmt.hpp"
+// #include "header/lcm_type/state_estimator_lcmt.hpp"
 #include "parameters/robot_parameters.hpp"
 #include "sim_utilities/imu_types.hpp"
 #include "sim_utilities/visualization_data.hpp"
@@ -44,27 +44,27 @@ template < typename T > struct StateEstimatorResult {
         memset( ( void* )this, 0, sizeof( StateEstimatorResult< T > ) );
     }
 
-    void setLcm( state_estimator_lcmt& lcm_data ) {
-        for ( int i = 0; i < 3; i++ ) {
-            lcm_data.p[ i ]          = position[ i ];
-            lcm_data.vWorld[ i ]     = velocity_in_world_frame[ i ];
-            lcm_data.vBody[ i ]      = velocity_in_body_frame[ i ];
-            lcm_data.p_abs[ i ]      = absolute_position[ i ];
-            lcm_data.vWorld_abs[ i ] = absolute_velocity_in_world_frame[ i ];
-            lcm_data.vBody_abs[ i ]  = absolute_velocity_in_body_frame[ i ];
-            lcm_data.rpy[ i ]        = rpy[ i ];
-            lcm_data.omegaBody[ i ]  = angular_velocity_in_body_frame[ i ];
-            lcm_data.omegaWorld[ i ] = angular_velocity_in_world_frame[ i ];
-            lcm_data.vRemoter[ i ]   = remoter_velocity[ i ];
-            lcm_data.aBody[ i ]      = acceleration_in_body_frame[ i ];
-            lcm_data.aWorld[ i ]     = acceleration_in_world_frame[ i ];
-        }
+    // void setLcm( state_estimator_lcmt& lcm_data ) {
+    //     for ( int i = 0; i < 3; i++ ) {
+    //         lcm_data.p[ i ]          = position[ i ];
+    //         lcm_data.vWorld[ i ]     = velocity_in_world_frame[ i ];
+    //         lcm_data.vBody[ i ]      = velocity_in_body_frame[ i ];
+    //         lcm_data.p_abs[ i ]      = absolute_position[ i ];
+    //         lcm_data.vWorld_abs[ i ] = absolute_velocity_in_world_frame[ i ];
+    //         lcm_data.vBody_abs[ i ]  = absolute_velocity_in_body_frame[ i ];
+    //         lcm_data.rpy[ i ]        = rpy[ i ];
+    //         lcm_data.omegaBody[ i ]  = angular_velocity_in_body_frame[ i ];
+    //         lcm_data.omegaWorld[ i ] = angular_velocity_in_world_frame[ i ];
+    //         lcm_data.vRemoter[ i ]   = remoter_velocity[ i ];
+    //         lcm_data.aBody[ i ]      = acceleration_in_body_frame[ i ];
+    //         lcm_data.aWorld[ i ]     = acceleration_in_world_frame[ i ];
+    //     }
 
-        for ( int i = 0; i < 4; i++ ) {
-            lcm_data.quat[ i ]            = orientation[ i ];
-            lcm_data.contactEstimate[ i ] = contact[ i ];
-        }
-    }
+    //     for ( int i = 0; i < 4; i++ ) {
+    //         lcm_data.quat[ i ]            = orientation[ i ];
+    //         lcm_data.contactEstimate[ i ] = contact[ i ];
+    //     }
+    // }
 };
 
 /**

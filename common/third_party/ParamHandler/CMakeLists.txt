@@ -1,7 +1,7 @@
 
 option(PARAM_TEST "Build test programe for ParamHandler")
 
-find_package(yaml-cpp 0.6.3 EXACT REQUIRED)
+find_package(yaml-cpp 0.7.0 EXACT REQUIRED)
 
 ###
 ### Library

@@ -19,20 +19,27 @@
 #include "utilities/timer.hpp"
 #include "command_interface/gamepad_command.hpp"
 #include "command_interface/rc_command.hpp"
-#include "header/lcm_type/file_recv_lcmt.hpp"
-#include "header/lcm_type/file_send_lcmt.hpp"
-#include "header/lcm_type/gamepad_lcmt.hpp"
-#include "header/lcm_type/motion_control_request_lcmt.hpp"
-#include "header/lcm_type/motor_ctrl_lcmt.hpp"
-#include "header/lcm_type/robot_control_cmd_lcmt.hpp"
-#include "header/lcm_type/trajectory_command_lcmt.hpp"
-
+// #include "header/lcm_type/file_recv_lcmt.hpp"
+// #include "header/lcm_type/file_send_lcmt.hpp"
+// #include "header/lcm_type/gamepad_lcmt.hpp"
+// #include "header/lcm_type/motion_control_request_lcmt.hpp"
+// #include "header/lcm_type/motor_ctrl_lcmt.hpp"
+// #include "header/lcm_type/robot_control_cmd_lcmt.hpp"
+// #include "header/lcm_type/trajectory_command_lcmt.hpp"
+#include "hxt.hpp"
 #define CMD_TIMEOUT 0.5  // cmd timeout time in second
 
 /**
  * @brief data structure of MotionControlCommand
  * 
  */
+// struct motor_ctrl_lcmt {
+//     float q_des[12];
+//     float qd_des[12];
+//     float kp_des[12];
+//     float kd_des[12];
+//     float tau_des[12];
+// };
 struct MotionControlCommand {
     int8_t  mode;
     int8_t  gait_id;
@@ -94,14 +101,14 @@ public:
     
      // Command Process function group, work in bridge layer
     void ProcessGamepadCommand( const GamepadCommand& gamepad_cmd );
-    void ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd );
+    // void ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd );
     void ProcessRcCommand( const RcCommand* rc_cmd );
     void ProcessRcUdpCommand( const RcCommand* rc_cmd );
-    void ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd );
-    void ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd );
-    void ProcessLcmMotionCommand( const trajectory_command_lcmt* lcm_cmd );
-    void ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd );
-    int  ProcessUserGaitFile( const file_send_lcmt* user_gait_msg );
+    // void ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd );
+    // void ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd );
+    // void ProcessLcmMotionCommand( const trajectory_command_lcmt* lcm_cmd );
+    // void ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd );
+    // int  ProcessUserGaitFile( const file_send_lcmt* user_gait_msg );
     int  GetSpeedOffsetTrigger() {
         return speed_offset_rc_trigger_;
     }
@@ -109,9 +116,9 @@ public:
 private:
     void Gamepad2Cmd( long int* control_mode, long int* gait_id, const RobotType& robotType );
     void Rc2Cmd( const RobotType& robotType );
-    void MotorLcm2Cmd();
-    void Lcm2Cmd();
-    void HotdogLcm2Cmd();
+    // void MotorLcm2Cmd();
+    // void Lcm2Cmd();
+    // void HotdogLcm2Cmd();
     void Default2Cmd( int control_mode, int cmpc_gait );
     int  MotionListTxtRead( std::string file_name );
     int  MotionListTomlRead( std::string file_name );
@@ -150,13 +157,13 @@ private:
     int16_t                     motion_list_size_;
     std::string                 user_gait_file_;
     std::string                 user_gait_list_file_;
-    motion_control_request_lcmt hotdog_lcm_cmd_;
-    robot_control_cmd_lcmt      lcm_cmd_;
-    motor_ctrl_lcmt             motor_ctrl_cmd_;
-    Timer                       hotdog_lcm_timer_;
-    Timer                       lcm_timer_;
-    Timer                       lcm_duration_timer_;
-    Timer                       MotorCtrl_LCM_timer_;
+    // motion_control_request_lcmt hotdog_lcm_cmd_;
+    // robot_control_cmd_lcmt      lcm_cmd_;
+    // motor_ctrl_lcmt             motor_ctrl_cmd_;
+    // Timer                       hotdog_lcm_timer_;
+    // Timer                       lcm_timer_;
+    // Timer                       lcm_duration_timer_;
+    // Timer                       MotorCtrl_LCM_timer_;
     bool                        MotorCtrl_mode_flag_;
     int                         log_count_;
     int                         switch_tri_flag_;

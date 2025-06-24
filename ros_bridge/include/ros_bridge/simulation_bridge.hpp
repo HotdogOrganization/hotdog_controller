@@ -15,7 +15,16 @@
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
 
-#include "header/lcm_type/localization_lcmt.hpp"
+// #include "header/lcm_type/localization_lcmt.hpp"
+
+struct localization_lcmt {
+  float xyz[3];
+  float vxyz[3];
+  float rpy[3];
+  float omegaBody[3];
+  float vBody[3];
+  int64_t timestamp;
+};
 
 namespace hotdog_locomotion
 {
@@ -67,9 +76,9 @@ public:
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
   }
-  const localization_lcmt& GetGlobalToRobotLcm() const {
-    return global_to_robot_lcmt_;
-  }
+  // const localization_lcmt& GetGlobalToRobotLcm() const {
+  //   return global_to_robot_lcmt_;
+  // }
   
 private:
   bool LoadControlParametersFromFiles();

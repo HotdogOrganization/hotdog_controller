@@ -17,9 +17,11 @@
 #include "utilities/toolkit.hpp"
 
 RobotRunner::RobotRunner( RobotController* robot_ctrl, PeriodicTaskManager* manager, float period, std::string name )
-    : PeriodicTask( manager, period, name ), bms_status_( nullptr ), battery_soc_( nullptr ), state_estimate_result_(), lcm_( GetLcmUrl( 255 ) ), state_lcm_( GetLcmUrlWithPort( 7669, 255 ) ),
-      global_to_robot_lcm_( GetLcmUrl( 255 ) ), send_to_ros_lcm_( GetLcmUrlWithPort( 7670, 255 ) ), send_to_ros_lcm_hotdog_( GetLcmUrlWithPort( 7670, 255 ) ),
-      send_to_ros_lcm_motor_( GetLcmUrlWithPort( 7670, 255 ) ) {
+    : PeriodicTask( manager, period, name ), bms_status_( nullptr ), battery_soc_( nullptr ), state_estimate_result_()
+    // , lcm_( GetLcmUrl( 255 ) ), state_lcm_( GetLcmUrlWithPort( 7669, 255 ) ),
+    //   global_to_robot_lcm_( GetLcmUrl( 255 ) ), send_to_ros_lcm_( GetLcmUrlWithPort( 7670, 255 ) ), send_to_ros_lcm_hotdog_( GetLcmUrlWithPort( 7670, 255 ) ),
+    //   send_to_ros_lcm_motor_( GetLcmUrlWithPort( 7670, 255 ) )
+       {
     robot_ctrl_ = robot_ctrl;
 }
 
@@ -79,9 +81,9 @@ void RobotRunner::RunTask() {
     state_estimator_->Run();
     visualization_data_->clear();
     // publish state estimator fisrt, for SLAM system
-    state_estimate_result_.setLcm( state_estimator_lcm_ );
-    state_estimator_lcm_.timestamp  = timestamp;
-    global_to_robot_lcmt_.timestamp = timestamp;
+    // state_estimate_result_.setLcm( state_estimator_lcm_ );
+    // state_estimator_lcm_.timestamp  = timestamp;
+    // global_to_robot_lcmt_.timestamp = timestamp;
     /***publish by independent thread***/
     // lcm_.publish("state_estimator", &state_estimator_lcm_);
 
@@ -177,27 +179,27 @@ void RobotRunner::UnresponceSaftyCheck() {
  * @brief Publish lcm message by independent thread.
  *
  */
-void RobotRunner::LCMPublishByThread() {
-    int freq_div = 10;  // 2:250HZ  3:167hz  4:125HZ  5:100HZ  10:50HZ
-    if ( control_parameters_->lcm_debug_switch == 1 )
-        freq_div = 1;
-    // stateEstimator publish
-    if ( lcm_iterations_ % freq_div == 0 ) {
-        state_lcm_.publish( "state_estimator", &state_estimator_lcm_ );
-        global_to_robot_lcm_.publish( "global_to_robot", &global_to_robot_lcmt_ );
-        // publish legs' cmd and data
-        lcm_.publish( "leg_control_data", &leg_control_data_lcm_ );
-    }
-    if ( control_parameters_->lcm_debug_switch == 1 ) {
-        lcm_.publish( "leg_control_command", &leg_control_command_lcm_ );
-    }
-    if ( robot_type_ == RobotType::CYBERDOG )
-        PublishHotdogLcmFeedback();
-    // lcm_.publish("wbc_lcm_data", &(WBCtrl::wbc_data_lcm_) );
-    // PublishLcmFeedback();
-    PublishLcmMotorStates();
-    lcm_iterations_++;
-}
+// void RobotRunner::LCMPublishByThread() {
+//     int freq_div = 10;  // 2:250HZ  3:167hz  4:125HZ  5:100HZ  10:50HZ
+//     if ( control_parameters_->lcm_debug_switch == 1 )
+//         freq_div = 1;
+//     // stateEstimator publish
+//     if ( lcm_iterations_ % freq_div == 0 ) {
+//         state_lcm_.publish( "state_estimator", &state_estimator_lcm_ );
+//         global_to_robot_lcm_.publish( "global_to_robot", &global_to_robot_lcmt_ );
+//         // publish legs' cmd and data
+//         lcm_.publish( "leg_control_data", &leg_control_data_lcm_ );
+//     }
+//     if ( control_parameters_->lcm_debug_switch == 1 ) {
+//         lcm_.publish( "leg_control_command", &leg_control_command_lcm_ );
+//     }
+//     // if ( robot_type_ == RobotType::CYBERDOG )
+//     //     PublishHotdogLcmFeedback();
+//     // lcm_.publish("wbc_lcm_data", &(WBCtrl::wbc_data_lcm_) );
+//     // PublishLcmFeedback();
+//     // PublishLcmMotorStates();
+//     lcm_iterations_++;
+// }
 
 /**
  * @brief Before running user code, setup the leg control and estimators.
@@ -237,8 +239,8 @@ void RobotRunner::SetupStep() {
     cmd_interface_->SetSwitchStaus( robot_ctrl_->GetSwitchStatus() );
     cmd_interface_->SetFsmState( robot_ctrl_->GetFsmMode() );
     cmd_interface_->PrepareCmd( control_parameters_->use_rc, &control_parameters_->control_mode, &control_parameters_->gait_id, robot_type_ );
-    if ( control_parameters_->lcm_debug_switch == 1 )
-        lcm_.publish( "motion_control_cmd", ( robot_control_cmd_lcmt* )&cmd_interface_->GetCommand() );
+    // if ( control_parameters_->lcm_debug_switch == 1 )
+    //     lcm_.publish( "motion_control_cmd", ( robot_control_cmd_lcmt* )&cmd_interface_->GetCommand() );
     // publish the state by lcm
     // publishLcmFeedback();
 
@@ -260,111 +262,111 @@ void RobotRunner::FinalizeStep() {
     else {
         assert( false );
     }
-    leg_controller_->SetLcm( &leg_control_data_lcm_, &leg_control_command_lcm_ );
+    // leg_controller_->SetLcm( &leg_control_data_lcm_, &leg_control_command_lcm_ );
     /***publish by independent thread***/
     // lcm_.publish("leg_control_command", &leg_control_command_lcm_);
     // lcm_.publish("leg_control_data", &leg_control_data_lcm_);
 
-    global_to_robot_lcmt_.rpy[ 0 ]       = state_estimator_lcm_.rpy[ 0 ];
-    global_to_robot_lcmt_.rpy[ 1 ]       = state_estimator_lcm_.rpy[ 1 ];
-    global_to_robot_lcmt_.rpy[ 2 ]       = state_estimator_lcm_.rpy[ 2 ];
-    global_to_robot_lcmt_.omegaBody[ 0 ] = state_estimator_lcm_.omegaBody[ 0 ];
-    global_to_robot_lcmt_.omegaBody[ 1 ] = state_estimator_lcm_.omegaBody[ 1 ];
-    global_to_robot_lcmt_.omegaBody[ 2 ] = state_estimator_lcm_.omegaBody[ 2 ];
+    // global_to_robot_lcmt_.rpy[ 0 ]       = state_estimator_lcm_.rpy[ 0 ];
+    // global_to_robot_lcmt_.rpy[ 1 ]       = state_estimator_lcm_.rpy[ 1 ];
+    // global_to_robot_lcmt_.rpy[ 2 ]       = state_estimator_lcm_.rpy[ 2 ];
+    // global_to_robot_lcmt_.omegaBody[ 0 ] = state_estimator_lcm_.omegaBody[ 0 ];
+    // global_to_robot_lcmt_.omegaBody[ 1 ] = state_estimator_lcm_.omegaBody[ 1 ];
+    // global_to_robot_lcmt_.omegaBody[ 2 ] = state_estimator_lcm_.omegaBody[ 2 ];
 #if defined USE_ABSOLUTE_ODOM_ONLY_FOR_VISION
-    global_to_robot_lcmt_.xyz[ 0 ]   = state_estimator_lcm_.p_abs[ 0 ];
-    global_to_robot_lcmt_.xyz[ 1 ]   = state_estimator_lcm_.p_abs[ 1 ];
-    global_to_robot_lcmt_.xyz[ 2 ]   = state_estimator_lcm_.p_abs[ 2 ];
-    global_to_robot_lcmt_.vxyz[ 0 ]  = state_estimator_lcm_.vWorld_abs[ 0 ];
-    global_to_robot_lcmt_.vxyz[ 1 ]  = state_estimator_lcm_.vWorld_abs[ 1 ];
-    global_to_robot_lcmt_.vxyz[ 2 ]  = state_estimator_lcm_.vWorld_abs[ 2 ];
-    global_to_robot_lcmt_.vBody[ 0 ] = state_estimator_lcm_.vBody_abs[ 0 ];
-    global_to_robot_lcmt_.vBody[ 1 ] = state_estimator_lcm_.vBody_abs[ 1 ];
-    global_to_robot_lcmt_.vBody[ 2 ] = state_estimator_lcm_.vBody_abs[ 2 ];
+    // global_to_robot_lcmt_.xyz[ 0 ]   = state_estimator_lcm_.p_abs[ 0 ];
+    // global_to_robot_lcmt_.xyz[ 1 ]   = state_estimator_lcm_.p_abs[ 1 ];
+    // global_to_robot_lcmt_.xyz[ 2 ]   = state_estimator_lcm_.p_abs[ 2 ];
+    // global_to_robot_lcmt_.vxyz[ 0 ]  = state_estimator_lcm_.vWorld_abs[ 0 ];
+    // global_to_robot_lcmt_.vxyz[ 1 ]  = state_estimator_lcm_.vWorld_abs[ 1 ];
+    // global_to_robot_lcmt_.vxyz[ 2 ]  = state_estimator_lcm_.vWorld_abs[ 2 ];
+    // global_to_robot_lcmt_.vBody[ 0 ] = state_estimator_lcm_.vBody_abs[ 0 ];
+    // global_to_robot_lcmt_.vBody[ 1 ] = state_estimator_lcm_.vBody_abs[ 1 ];
+    // global_to_robot_lcmt_.vBody[ 2 ] = state_estimator_lcm_.vBody_abs[ 2 ];
 #else
-    global_to_robot_lcmt_.xyz[ 0 ]   = state_estimator_lcm_.p[ 0 ];
-    global_to_robot_lcmt_.xyz[ 1 ]   = state_estimator_lcm_.p[ 1 ];
-    global_to_robot_lcmt_.xyz[ 2 ]   = state_estimator_lcm_.p[ 2 ];
-    global_to_robot_lcmt_.vxyz[ 0 ]  = state_estimator_lcm_.vWorld[ 0 ];
-    global_to_robot_lcmt_.vxyz[ 1 ]  = state_estimator_lcm_.vWorld[ 1 ];
-    global_to_robot_lcmt_.vxyz[ 2 ]  = state_estimator_lcm_.vWorld[ 2 ];
-    global_to_robot_lcmt_.vBody[ 0 ] = state_estimator_lcm_.vBody[ 0 ];
-    global_to_robot_lcmt_.vBody[ 1 ] = state_estimator_lcm_.vBody[ 1 ];
-    global_to_robot_lcmt_.vBody[ 2 ] = state_estimator_lcm_.vBody[ 2 ];
+    // global_to_robot_lcmt_.xyz[ 0 ]   = state_estimator_lcm_.p[ 0 ];
+    // global_to_robot_lcmt_.xyz[ 1 ]   = state_estimator_lcm_.p[ 1 ];
+    // global_to_robot_lcmt_.xyz[ 2 ]   = state_estimator_lcm_.p[ 2 ];
+    // global_to_robot_lcmt_.vxyz[ 0 ]  = state_estimator_lcm_.vWorld[ 0 ];
+    // global_to_robot_lcmt_.vxyz[ 1 ]  = state_estimator_lcm_.vWorld[ 1 ];
+    // global_to_robot_lcmt_.vxyz[ 2 ]  = state_estimator_lcm_.vWorld[ 2 ];
+    // global_to_robot_lcmt_.vBody[ 0 ] = state_estimator_lcm_.vBody[ 0 ];
+    // global_to_robot_lcmt_.vBody[ 1 ] = state_estimator_lcm_.vBody[ 1 ];
+    // global_to_robot_lcmt_.vBody[ 2 ] = state_estimator_lcm_.vBody[ 2 ];
 #endif
     /***publish by independent thread***/
     // lcm_.publish("global_to_robot", &global_to_robot_lcmt_);
     iterations_++;
-    PublishLcmFeedback();
+    // PublishLcmFeedback();
 }
 
-void RobotRunner::PublishHotdogLcmFeedback() {
-    // get pattern
-    int8_t pattern;
-    int8_t mode;
-    auto   cmd = cmd_interface_->GetCommand();
-    Mode2Pattern( robot_ctrl_->GetFsmMode(), cmd.gait_id, pattern );
-    Order2Mode( cmd.gait_id, mode );
-    motion_control_response_lcmt lcm_data;
-    lcm_data.pattern           = robot_ctrl_->GetFsmSwitchFlag() ? pattern : 0;
-    lcm_data.order             = robot_ctrl_->GetFsmMode() == mode ? cmd.gait_id : 0;
-    lcm_data.order_process_bar = robot_ctrl_->GetFsmProcessBar();
-    lcm_data.foot_contact      = 0;
+// void RobotRunner::PublishHotdogLcmFeedback() {
+//     // get pattern
+//     int8_t pattern;
+//     int8_t mode;
+//     auto   cmd = cmd_interface_->GetCommand();
+//     Mode2Pattern( robot_ctrl_->GetFsmMode(), cmd.gait_id, pattern );
+//     Order2Mode( cmd.gait_id, mode );
+//     motion_control_response_lcmt lcm_data;
+//     lcm_data.pattern           = robot_ctrl_->GetFsmSwitchFlag() ? pattern : 0;
+//     lcm_data.order             = robot_ctrl_->GetFsmMode() == mode ? cmd.gait_id : 0;
+//     lcm_data.order_process_bar = robot_ctrl_->GetFsmProcessBar();
+//     lcm_data.foot_contact      = 0;
 
-    for ( int i = 0; i < 4; i++ ) {
-        double fforce = leg_controller_->datas_[ i ].foot_force_actual.norm();
-        if ( fforce > 5.0 )
-            lcm_data.foot_contact |= ( 1 << i );
-    }
+//     for ( int i = 0; i < 4; i++ ) {
+//         double fforce = leg_controller_->datas_[ i ].foot_force_actual.norm();
+//         if ( fforce > 5.0 )
+//             lcm_data.foot_contact |= ( 1 << i );
+//     }
 
-    lcm_data.error_flag.exist_error   = robot_ctrl_->GetSafetyCheckErrorFlag() || robot_ctrl_->GetMotorErrorFlag();
-    lcm_data.error_flag.ori_error     = robot_ctrl_->GetOriErrorFlag();
-    lcm_data.error_flag.footpos_error = robot_ctrl_->GetFootPosError();
-    for ( int i = 0; i < 12; i++ )
-        lcm_data.error_flag.motor_error[ i ] = spi_data_->flags[ i ];
-    /***publish by independent thread***/
-    if ( iterations_ % 10 == 1 )
-        send_to_ros_lcm_hotdog_.publish( "exec_response", &lcm_data );
-}
+//     lcm_data.error_flag.exist_error   = robot_ctrl_->GetSafetyCheckErrorFlag() || robot_ctrl_->GetMotorErrorFlag();
+//     lcm_data.error_flag.ori_error     = robot_ctrl_->GetOriErrorFlag();
+//     lcm_data.error_flag.footpos_error = robot_ctrl_->GetFootPosError();
+//     for ( int i = 0; i < 12; i++ )
+//         lcm_data.error_flag.motor_error[ i ] = spi_data_->flags[ i ];
+//     /***publish by independent thread***/
+//     if ( iterations_ % 10 == 1 )
+//         send_to_ros_lcm_hotdog_.publish( "exec_response", &lcm_data );
+// }
 
-void RobotRunner::PublishLcmFeedback() {
+// void RobotRunner::PublishLcmFeedback() {
 
-    if ( robot_type_ == RobotType::CYBERDOG )
-        return;
-    robot_control_response_lcmt lcm_data;
-    lcm_data.mode              = robot_ctrl_->GetFsmMode();
-    lcm_data.gait_id           = robot_ctrl_->GetFsmGaitId();
-    lcm_data.switch_status     = robot_ctrl_->GetSwitchStatus();
-    lcm_data.order_process_bar = robot_ctrl_->GetFsmProcessBar();
-    lcm_data.contact           = 0;
-    lcm_data.footpos_error     = 0;
+//     if ( robot_type_ == RobotType::CYBERDOG )
+//         return;
+//     robot_control_response_lcmt lcm_data;
+//     lcm_data.mode              = robot_ctrl_->GetFsmMode();
+//     lcm_data.gait_id           = robot_ctrl_->GetFsmGaitId();
+//     lcm_data.switch_status     = robot_ctrl_->GetSwitchStatus();
+//     lcm_data.order_process_bar = robot_ctrl_->GetFsmProcessBar();
+//     lcm_data.contact           = 0;
+//     lcm_data.footpos_error     = 0;
 
-    for ( int i = 0; i < 4; i++ ) {
-        double fforce = leg_controller_->datas_[ i ].foot_force_actual.norm();
-        if ( fforce > 5.0 )
-            lcm_data.contact |= ( 1 << i );
-    }
-    lcm_data.ori_error   = robot_ctrl_->GetOriErrorFlag();
-    int32_t footpos_flag = robot_ctrl_->GetFootPosError();
-    for ( int i = 0; i < 4; i++ )
-        lcm_data.footpos_error |= ( ( footpos_flag & ( 0x07 << ( i * 8 ) ) ) >> ( i * 5 ) );  // Compress int32_t to int16_t;
-    for ( int i = 0; i < 12; i++ )
-        lcm_data.motor_error[ i ] = spi_data_->flags[ i ];
-    if ( lcm_data_old_.switch_status != lcm_data.switch_status || ( iterations_ % 10 == 0 ) || ( lcm_data.order_process_bar >= 95 && lcm_data_old_.order_process_bar != 100 ) )
-        send_to_ros_lcm_.publish( "robot_control_response", &lcm_data );
-    lcm_data_old_ = lcm_data;
-}
+//     for ( int i = 0; i < 4; i++ ) {
+//         double fforce = leg_controller_->datas_[ i ].foot_force_actual.norm();
+//         if ( fforce > 5.0 )
+//             lcm_data.contact |= ( 1 << i );
+//     }
+//     lcm_data.ori_error   = robot_ctrl_->GetOriErrorFlag();
+//     int32_t footpos_flag = robot_ctrl_->GetFootPosError();
+//     for ( int i = 0; i < 4; i++ )
+//         lcm_data.footpos_error |= ( ( footpos_flag & ( 0x07 << ( i * 8 ) ) ) >> ( i * 5 ) );  // Compress int32_t to int16_t;
+//     for ( int i = 0; i < 12; i++ )
+//         lcm_data.motor_error[ i ] = spi_data_->flags[ i ];
+//     if ( lcm_data_old_.switch_status != lcm_data.switch_status || ( iterations_ % 10 == 0 ) || ( lcm_data.order_process_bar >= 95 && lcm_data_old_.order_process_bar != 100 ) )
+//         send_to_ros_lcm_.publish( "robot_control_response", &lcm_data );
+//     lcm_data_old_ = lcm_data;
+// }
 
-void RobotRunner::PublishLcmMotorStates() {
-    danger_states_lcmt motor_tmp;
-    for ( int leg = 0; leg < 4; leg++ ) {
-        motor_tmp.motor_temperature[ 3 * leg ]     = 1.0 * spi_data_->tmp_abad[ leg ] / 10.0;
-        motor_tmp.motor_temperature[ 3 * leg + 1 ] = 1.0 * spi_data_->tmp_hip[ leg ] / 10.0;
-        motor_tmp.motor_temperature[ 3 * leg + 2 ] = 1.0 * spi_data_->tmp_knee[ leg ] / 10.0;
-    }
-    if ( lcm_iterations_ % 500 == 3 )
-        send_to_ros_lcm_motor_.publish( "motor_temperature", &motor_tmp );
-}
+// void RobotRunner::PublishLcmMotorStates() {
+//     danger_states_lcmt motor_tmp;
+//     for ( int leg = 0; leg < 4; leg++ ) {
+//         motor_tmp.motor_temperature[ 3 * leg ]     = 1.0 * spi_data_->tmp_abad[ leg ] / 10.0;
+//         motor_tmp.motor_temperature[ 3 * leg + 1 ] = 1.0 * spi_data_->tmp_hip[ leg ] / 10.0;
+//         motor_tmp.motor_temperature[ 3 * leg + 2 ] = 1.0 * spi_data_->tmp_knee[ leg ] / 10.0;
+//     }
+//     if ( lcm_iterations_ % 500 == 3 )
+//         send_to_ros_lcm_motor_.publish( "motor_temperature", &motor_tmp );
+// }
 
 /**
  * @brief Reset the state estimator in the given mode.

@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.5...3.22)
 
-# 解决OpenGL策略警告
-if(POLICY CMP0072)
-  cmake_policy(SET CMP0072 NEW)
-endif()
-
 project(hotdog_controller)
 
 # 防止源码被更改和源码目录内编译
@@ -59,7 +54,7 @@ else()
       -Winit-self -Wmissing-include-dirs -Woverloaded-virtual \
       -Wno-format-nonliteral -Wsign-promo -Wno-strict-aliasing")
     set(CMAKE_C_FLAGS "-O3 -ggdb -std=gnu99 -I.")
-    include_directories("/usr/local/include/") # lcm includes
+    include_directories("/usr/local/include/")
   endif()
   message("**** Onboard Build disabled ****")
 endif()
@@ -102,16 +97,12 @@ set(ros_dependencies
 
 # =================== 第三方库 ===================
 find_package(Eigen3 3.4.0 EXACT REQUIRED)
-find_package(lcm REQUIRED)
 find_package(glog REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(yaml-cpp 0.6.3 EXACT REQUIRED)
+find_package(yaml-cpp 0.7.0 EXACT REQUIRED)
 
 set(third_party_dependencies
   Eigen3
-  lcm
   glog::glog
-  OpenGL
   yaml-cpp
 )
 
@@ -144,14 +135,11 @@ file(GLOB_RECURSE common_sources "common/src/*.cpp")
 # 添加common第三方子库
 add_subdirectory(common/third_party/ParamHandler)
 add_subdirectory(common/third_party/cpptoml)
-add_subdirectory(common/lcm_type)
 
 # 生成common库
 add_library(common SHARED ${common_sources})
-add_dependencies(common lcm_type)
 target_link_libraries(common
   pthread
-  lcm
   param_handler
   cpptoml
 )
@@ -182,14 +170,12 @@ include_directories(
   "${CMAKE_SOURCE_DIR}/common/third_party"
   "${CMAKE_SOURCE_DIR}/ros_bridge/include"
   ${GLOG_INCLUDE_DIRS}
-  ${OPENGL_INCLUDE_DIR}
 )
 
 # control库
 add_library(control SHARED ${control_sources} ${third_party_sources} ${factory_sources} ${simulator_sources})
 target_link_libraries(control
   pthread
-  lcm
   param_handler
   qpOASES
   Goldfarb_Optimizer
@@ -202,7 +188,6 @@ if(CMAKE_SYSTEM_NAME MATCHES Linux)
   target_link_libraries(control rt)
 endif()
 
-# ====== 这里是新增的 install 规则 ======
 install(
   TARGETS control
   ARCHIVE DESTINATION lib
