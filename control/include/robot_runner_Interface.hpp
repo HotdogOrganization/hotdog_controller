@@ -3,7 +3,6 @@
 
 #include "robot_controller.hpp"
 #include "robot_runner.hpp"
-// #include "header/lcm_type/localization_lcmt.hpp"
 
 class RobotRunner;
 class PeriodicTaskManager;
@@ -22,8 +21,7 @@ public:
 
     ControlParameters* GetUserControlParameters();
     bool*              GetLowPowerEnable();
-
-    // void LCMPublishByThread();
+    const StateEstimateData& GetStateEstimateData() const;
 
     void SetCommandInterface( CommandInterface* value );
     void SetSpiData( SpiData* value );
@@ -37,13 +35,6 @@ public:
     void SetCheaterState( CheaterState< double >* value );
     void SetBmsStatus( int8_t* value );
     void SetBattSoc( int8_t* value );
-
-    // const localization_lcmt& GetGlobalToRobotLcm() const {
-    //     if (!robot_runner_) {
-    //         throw std::runtime_error("RobotRunner is not initialized.");
-    //     }
-    //     return robot_runner_->GetGlobalToRobotLcm();
-    // }
 
 private:
     RobotRunner* robot_runner_;

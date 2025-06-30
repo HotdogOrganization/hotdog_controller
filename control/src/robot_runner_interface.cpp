@@ -73,6 +73,11 @@ bool* RobotRunnerInterface::GetLowPowerEnable() {
     return &( robot_runner_->enable_low_power_ );
 }
 
+const StateEstimateData& RobotRunnerInterface::GetStateEstimateData() const
+{
+    return robot_runner_->GetStateEstimateData();
+}
+
 /**
  * @brief Initialize the state estimator with default no cheaterMode
  *
@@ -81,6 +86,3 @@ void RobotRunnerInterface::InitializeStateEstimator( bool cheaterMode ) {
     robot_runner_->InitializeStateEstimator( cheaterMode );
 }
 
-// void RobotRunnerInterface::LCMPublishByThread() {
-//     robot_runner_->LCMPublishByThread();
-// }

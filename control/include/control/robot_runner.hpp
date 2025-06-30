@@ -22,7 +22,6 @@
 // #include "header/lcm_type/robot_control_response_lcmt.hpp"
 // #include "header/lcm_type/state_estimator_lcmt.hpp"
 #include "robot_controller.hpp"
-// #include <lcm/lcm-cpp.hpp>
 
 class RobotRunner : public PeriodicTask {
 public:
@@ -53,11 +52,10 @@ public:
     int8_t*                 bms_status_;
     int8_t*                 battery_soc_;
     bool                    enable_low_power_ = false;
-    // void                    LCMPublishByThread();
 
-    // const localization_lcmt& GetGlobalToRobotLcm() const {
-    //     return global_to_robot_lcmt_;
-    // }
+    const StateEstimateData& GetStateEstimateData() const {
+        return state_estimate_data_;
+    }
 
 private:
     int iter_             = 0;
@@ -66,9 +64,6 @@ private:
     void SetupStep();
     void FinalizeStep();
 
-    // void PublishHotdogLcmFeedback();
-    // void PublishLcmFeedback();
-    // void PublishLcmMotorStates();
     void UnresponceSaftyCheck();
 
     void Mode2Pattern( double mode, double gait_num, int8_t& pattern );
@@ -76,32 +71,17 @@ private:
 
     Quadruped< float >            quadruped_;
     LegController< float >*       leg_controller_ = nullptr;
-    StateEstimatorResult< float > state_estimate_result_;
 
     StateEstimatorContainer< float >* state_estimator_;
+    StateEstimatorResult< float > state_estimate_result_;
+    StateEstimateData state_estimate_data_;
 
     bool cheater_mode_enabled_ = false;
 
-    // robot_control_response_lcmt lcm_data_old_;
-
-    // lcm::LCM                 lcm_;
-    // lcm::LCM                 state_lcm_;
-    // lcm::LCM                 global_to_robot_lcm_;
-    // leg_control_command_lcmt leg_control_command_lcm_;
-    // state_estimator_lcmt     state_estimator_lcm_;
-    // localization_lcmt        global_to_robot_lcmt_;
-    // leg_control_data_lcmt    leg_control_data_lcm_;
     // Contact Estimator to calculate estimated forces and contacts
 
     FloatingBaseModel< float > model_;
     u64                        iterations_ = 0;
-
-    // lcm::LCM             send_to_ros_lcm_;
-    // lcm::LCM             send_to_ros_lcm_hotdog_;
-    // lcm::LCM             send_to_ros_lcm_motor_;
-    // int                  cmd_lcm_timeout_     = 0;
-    // static constexpr int cmd_lcm_timeout_max_ = 500;
-    // int                  lcm_iterations_      = 0;
 };
 
 #endif  // ROBOT_RUNNER_HPP_

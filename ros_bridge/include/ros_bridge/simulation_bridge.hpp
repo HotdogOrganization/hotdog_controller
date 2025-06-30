@@ -1,7 +1,6 @@
 #ifndef SIMULATION_BRIDGE_HPP_
 #define SIMULATION_BRIDGE_HPP_
 
-#include <lcm/lcm-cpp.hpp>
 #include <thread>
 
 #include "parameters/robot_parameters.hpp"
@@ -14,17 +13,6 @@
 #include "msg_conversion.hpp"
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
-
-// #include "header/lcm_type/localization_lcmt.hpp"
-
-struct localization_lcmt {
-  float xyz[3];
-  float vxyz[3];
-  float rpy[3];
-  float omegaBody[3];
-  float vBody[3];
-  int64_t timestamp;
-};
 
 namespace hotdog_locomotion
 {
@@ -76,9 +64,9 @@ public:
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
   }
-  // const localization_lcmt& GetGlobalToRobotLcm() const {
-  //   return global_to_robot_lcmt_;
-  // }
+  const StateEstimateData& GetStateEstimateData() const {
+    return state_estimate_data_;
+  }
   
 private:
   bool LoadControlParametersFromFiles();
@@ -102,7 +90,7 @@ private:
   VectorNavData                   vector_nav_data_;
   GamepadCommand                  gamepad_command_;
   VisualizationData               visualization_data_;
-  localization_lcmt               global_to_robot_lcmt_;
+  StateEstimateData               state_estimate_data_;
   // ComplementaryFilter imu_filter_;
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;

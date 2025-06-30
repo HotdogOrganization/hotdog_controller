@@ -19,7 +19,6 @@
 #define MANAGER_SCRIPT_PATH "/mnt/UDISK/test/manager.sh"
 
 #define ROBOT_INTERFACE_UPDATE_PERIOD ( 1.f / 60.f )
-#define INTERFACE_LCM_NAME "interface"
 #define TIMES_TO_RESEND_CONTROL_PARAM 5
 
 #define K_WORDS_PER_MESSAGE 66
@@ -33,7 +32,6 @@
 #define DEFAULT_TERRAIN_FILE "default-terrain.yaml"
 #define DEFAULT_USER_FILE "/default-user-parameters-file.yaml"
 
-#define SIM_LCM_NAME "simulator_state"
 
 // Normal robot states
 #define K_PASSIVE 0

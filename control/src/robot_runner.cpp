@@ -17,11 +17,12 @@
 #include "utilities/toolkit.hpp"
 
 RobotRunner::RobotRunner( RobotController* robot_ctrl, PeriodicTaskManager* manager, float period, std::string name )
-    : PeriodicTask( manager, period, name ), bms_status_( nullptr ), battery_soc_( nullptr ), state_estimate_result_()
-    // , lcm_( GetLcmUrl( 255 ) ), state_lcm_( GetLcmUrlWithPort( 7669, 255 ) ),
-    //   global_to_robot_lcm_( GetLcmUrl( 255 ) ), send_to_ros_lcm_( GetLcmUrlWithPort( 7670, 255 ) ), send_to_ros_lcm_hotdog_( GetLcmUrlWithPort( 7670, 255 ) ),
-    //   send_to_ros_lcm_motor_( GetLcmUrlWithPort( 7670, 255 ) )
-       {
+    : PeriodicTask( manager, period, name ),
+      bms_status_( nullptr ),
+      battery_soc_( nullptr ),
+      state_estimate_result_(),
+      state_estimate_data_()
+{
     robot_ctrl_ = robot_ctrl;
 }
 
@@ -80,12 +81,10 @@ void RobotRunner::RunTask() {
     // Run the state estimator step
     state_estimator_->Run();
     visualization_data_->clear();
+
     // publish state estimator fisrt, for SLAM system
     // state_estimate_result_.setLcm( state_estimator_lcm_ );
     // state_estimator_lcm_.timestamp  = timestamp;
-    // global_to_robot_lcmt_.timestamp = timestamp;
-    /***publish by independent thread***/
-    // lcm_.publish("state_estimator", &state_estimator_lcm_);
 
     // Update the data from the robot
     SetupStep();
@@ -175,31 +174,7 @@ void RobotRunner::UnresponceSaftyCheck() {
         cmd_interface_->SetCmdQueueClearFlag( -1 );
     }
 }
-/**
- * @brief Publish lcm message by independent thread.
- *
- */
-// void RobotRunner::LCMPublishByThread() {
-//     int freq_div = 10;  // 2:250HZ  3:167hz  4:125HZ  5:100HZ  10:50HZ
-//     if ( control_parameters_->lcm_debug_switch == 1 )
-//         freq_div = 1;
-//     // stateEstimator publish
-//     if ( lcm_iterations_ % freq_div == 0 ) {
-//         state_lcm_.publish( "state_estimator", &state_estimator_lcm_ );
-//         global_to_robot_lcm_.publish( "global_to_robot", &global_to_robot_lcmt_ );
-//         // publish legs' cmd and data
-//         lcm_.publish( "leg_control_data", &leg_control_data_lcm_ );
-//     }
-//     if ( control_parameters_->lcm_debug_switch == 1 ) {
-//         lcm_.publish( "leg_control_command", &leg_control_command_lcm_ );
-//     }
-//     // if ( robot_type_ == RobotType::CYBERDOG )
-//     //     PublishHotdogLcmFeedback();
-//     // lcm_.publish("wbc_lcm_data", &(WBCtrl::wbc_data_lcm_) );
-//     // PublishLcmFeedback();
-//     // PublishLcmMotorStates();
-//     lcm_iterations_++;
-// }
+
 
 /**
  * @brief Before running user code, setup the leg control and estimators.
@@ -239,10 +214,6 @@ void RobotRunner::SetupStep() {
     cmd_interface_->SetSwitchStaus( robot_ctrl_->GetSwitchStatus() );
     cmd_interface_->SetFsmState( robot_ctrl_->GetFsmMode() );
     cmd_interface_->PrepareCmd( control_parameters_->use_rc, &control_parameters_->control_mode, &control_parameters_->gait_id, robot_type_ );
-    // if ( control_parameters_->lcm_debug_switch == 1 )
-    //     lcm_.publish( "motion_control_cmd", ( robot_control_cmd_lcmt* )&cmd_interface_->GetCommand() );
-    // publish the state by lcm
-    // publishLcmFeedback();
 
     // todo safety checks, sanity checks, etc...
 }
@@ -262,11 +233,8 @@ void RobotRunner::FinalizeStep() {
     else {
         assert( false );
     }
-    // leg_controller_->SetLcm( &leg_control_data_lcm_, &leg_control_command_lcm_ );
-    /***publish by independent thread***/
-    // lcm_.publish("leg_control_command", &leg_control_command_lcm_);
-    // lcm_.publish("leg_control_data", &leg_control_data_lcm_);
 
+    state_estimate_result_.ToStateEstimateData( state_estimate_data_ );
     // global_to_robot_lcmt_.rpy[ 0 ]       = state_estimator_lcm_.rpy[ 0 ];
     // global_to_robot_lcmt_.rpy[ 1 ]       = state_estimator_lcm_.rpy[ 1 ];
     // global_to_robot_lcmt_.rpy[ 2 ]       = state_estimator_lcm_.rpy[ 2 ];
@@ -355,17 +323,6 @@ void RobotRunner::FinalizeStep() {
 //     if ( lcm_data_old_.switch_status != lcm_data.switch_status || ( iterations_ % 10 == 0 ) || ( lcm_data.order_process_bar >= 95 && lcm_data_old_.order_process_bar != 100 ) )
 //         send_to_ros_lcm_.publish( "robot_control_response", &lcm_data );
 //     lcm_data_old_ = lcm_data;
-// }
-
-// void RobotRunner::PublishLcmMotorStates() {
-//     danger_states_lcmt motor_tmp;
-//     for ( int leg = 0; leg < 4; leg++ ) {
-//         motor_tmp.motor_temperature[ 3 * leg ]     = 1.0 * spi_data_->tmp_abad[ leg ] / 10.0;
-//         motor_tmp.motor_temperature[ 3 * leg + 1 ] = 1.0 * spi_data_->tmp_hip[ leg ] / 10.0;
-//         motor_tmp.motor_temperature[ 3 * leg + 2 ] = 1.0 * spi_data_->tmp_knee[ leg ] / 10.0;
-//     }
-//     if ( lcm_iterations_ % 500 == 3 )
-//         send_to_ros_lcm_motor_.publish( "motor_temperature", &motor_tmp );
 // }
 
 /**
