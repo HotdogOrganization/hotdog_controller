@@ -76,6 +76,17 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       tita_topic::manager_hotdog_key, rclcpp::SensorDataQoS().reliable(),
       std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
 
+  imu_subscription_ = get_node()->create_subscription<sensor_msgs::msg::Imu>(
+    "fuck_imu", rclcpp::SensorDataQoS(),
+    std::bind(&HotdogControllerPlugin::imu_cb, this, std::placeholders::_1));
+
+
+  joint_states_subscription_ = get_node()->create_subscription<sopu_msgs::msg::MotorStatus>(
+      "fuck_motor", rclcpp::SensorDataQoS().reliable(),
+      std::bind(&HotdogControllerPlugin::joint_states_cb, this, std::placeholders::_1));
+
+
+
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
   
   motor_status_publisher_
@@ -239,6 +250,48 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_shutdown(const r
 }
 
 HotdogControllerPlugin::~HotdogControllerPlugin() {}
+
+
+void HotdogControllerPlugin::imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg)
+{
+//   RCLCPP_INFO(
+//       rclcpp::get_logger("HotdogControllerPlugin"),
+//       "IMU接收: orientation=(%.3f, %.3f, %.3f, %.3f), "
+//       "angular_velocity=(%.3f, %.3f, %.3f), "
+//       "linear_acceleration=(%.3f, %.3f, %.3f)",
+//       msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w,
+//       msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z,
+//       msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z
+// );
+
+    std::lock_guard<std::mutex> lock(imu_mutex_);
+    latest_imu_msg_ = *msg;
+    imu_received_ = true;
+}
+
+
+void HotdogControllerPlugin::joint_states_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg)
+{
+
+  // for (int i = 0; i < 4; ++i) {
+  //   RCLCPP_INFO(get_node()->get_logger(),
+  //       "关节%d: q_abad=%.3f q_hip=%.3f q_knee=%.3f | qd_abad=%.3f qd_hip=%.3f qd_knee=%.3f | tau_abad=%.3f tau_hip=%.3f tau_knee=%.3f | temp_abad=%.3f temp_hip=%.3f temp_knee=%.3f | flag_abad=%d flag_hip=%d flag_knee=%d",
+  //       i,
+  //       msg->q_abad[i], msg->q_hip[i], msg->q_knee[i],
+  //       msg->qd_abad[i], msg->qd_hip[i], msg->qd_knee[i],
+  //       msg->tau_abad[i], msg->tau_hip[i], msg->tau_knee[i],
+  //       msg->temp_abad[i], msg->temp_hip[i], msg->temp_knee[i],
+  //       msg->flag_abad[i], msg->flag_hip[i], msg->flag_knee[i]
+  //   );
+  // }
+    std::lock_guard<std::mutex> lock(motor_mutex_);
+    latest_motor_status_msg_ = *msg;
+    motor_status_received_ = true;
+}
+
+
+
+
 
 // TODO:
 void HotdogControllerPlugin::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg){
@@ -455,18 +508,75 @@ void HotdogControllerPlugin::mainLoopThread()
 {
   RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
   size_t id = 0;
-  for (std::shared_ptr<Joint> joint : joints_) {
-    motor_pos_[id] = joint->position_handle->get().get_value();
-    motor_vel_[id] = joint->velocity_handle->get().get_value();
-    id++;
-  }
+  // for (std::shared_ptr<Joint> joint : joints_) {
+  //   motor_pos_[id] = joint->position_handle->get().get_value();
+  //   motor_vel_[id] = joint->velocity_handle->get().get_value();
+  //   id++;
+  // }
 
-  quat_[0] = imu_sensor_->get_orientation()[3];
-  for(size_t id = 0; id < 3; id++) {
-    quat_[id + 1] = imu_sensor_->get_orientation()[id];
-    gyro_[id] = imu_sensor_->get_angular_velocity()[id];
-    accl_[id] = imu_sensor_->get_linear_acceleration()[id];
-  }
+
+
+
+
+  // quat_[0] = imu_sensor_->get_orientation()[3];
+  // for(size_t id = 0; id < 3; id++) {
+  //   quat_[id + 1] = imu_sensor_->get_orientation()[id];
+  //   gyro_[id] = imu_sensor_->get_angular_velocity()[id];
+  //   accl_[id] = imu_sensor_->get_linear_acceleration()[id];
+  // }
+
+// 读取电机状态
+{
+    std::lock_guard<std::mutex> lock(motor_mutex_);
+    if (motor_status_received_) {
+        // motor_pos_、motor_vel_按你的电机数据格式赋值
+        // 例如：motor_pos_ = latest_motor_status_msg_.q_abad + q_hip + q_knee 拼成的数组
+        // motor_vel_ 同理
+        // 假设每条腿3个电机，顺序为：abad, hip, knee
+        for (int leg = 0; leg < 4; ++leg) {
+            motor_pos_[leg * 3 + 0] = latest_motor_status_msg_.q_abad[leg];
+            motor_pos_[leg * 3 + 1] = latest_motor_status_msg_.q_hip[leg];
+            motor_pos_[leg * 3 + 2] = latest_motor_status_msg_.q_knee[leg];
+
+            motor_vel_[leg * 3 + 0] = latest_motor_status_msg_.qd_abad[leg];
+            motor_vel_[leg * 3 + 1] = latest_motor_status_msg_.qd_hip[leg];
+            motor_vel_[leg * 3 + 2] = latest_motor_status_msg_.qd_knee[leg];
+        }
+    }
+}
+
+// 读取IMU
+{
+    std::lock_guard<std::mutex> lock(imu_mutex_);
+    if (imu_received_) {
+        // 四元数
+        quat_[0] = latest_imu_msg_.orientation.w;
+        quat_[1] = latest_imu_msg_.orientation.x;
+        quat_[2] = latest_imu_msg_.orientation.y;
+        quat_[3] = latest_imu_msg_.orientation.z;
+        // 角速度
+        gyro_[0] = latest_imu_msg_.angular_velocity.x;
+        gyro_[1] = latest_imu_msg_.angular_velocity.y;
+        gyro_[2] = latest_imu_msg_.angular_velocity.z;
+        // 线加速度
+        accl_[0] = latest_imu_msg_.linear_acceleration.x;
+        accl_[1] = latest_imu_msg_.linear_acceleration.y;
+        accl_[2] = latest_imu_msg_.linear_acceleration.z;
+        // // 打印IMU数据
+        // RCLCPP_INFO(
+        //     rclcpp::get_logger("HotdogControllerPlugin"),
+        //     "IMU orientation: [w: %.6f, x: %.6f, y: %.6f, z: %.6f]",
+        //     quat_[0], quat_[1], quat_[2], quat_[3]
+        // );
+
+  
+    
+    
+      }
+}
+
+
+
   if (!init_flag_) {
     init_flag_ = true;
     // robot_task_->Run_Init();
@@ -479,8 +589,9 @@ void HotdogControllerPlugin::mainLoopThread()
   if (simulation_bridge_) {
     GamepadCommand gamepad_command;
     //key
+          std::lock_guard<std::mutex> lock(joy_data_mutex_);
+
     if (is_joy_received_) {
-      std::lock_guard<std::mutex> lock(joy_data_mutex_);
       gamepad_command.a = joy_data_.buttons[0]; // t
       gamepad_command.b = joy_data_.buttons[1]; // y
       gamepad_command.x = joy_data_.buttons[2]; // e

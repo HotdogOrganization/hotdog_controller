@@ -46,7 +46,7 @@ ConvexMpcLocoGaits::ConvexMpcLocoGaits( float dt, int iterations_between_mpc )
       trot_16_10_( int( gait_period_base * 1.6 ), Vec4< int >( 0, 8, 8, 0 ), Vec4< int >( 10, 10, 10, 10 ), "Trot16_10" ),
       trot_14_8_( int( gait_period_base * 1.4 ), Vec4< int >( 0, 7, 7, 0 ), Vec4< int >( 8, 8, 8, 8 ), "Trot14_8" ),
       trot_12_6_( int( gait_period_base * 1.2 ), Vec4< int >( 0, 6, 6, 0 ), Vec4< int >( 6, 6, 6, 6 ), "Trot12_6" ),
-      trot_10_5_( gait_period_base, Vec4< int >( 0, 5, 5, 0 ), Vec4< int >( 5, 5, 5, 5 ), "Trot10_5" ),
+      trot_10_5_( int( gait_period_base * 2.0 ), Vec4< int >( 0, 10, 10, 0 ), Vec4< int >( 12, 12, 12, 12 ), "Trot10_5" ),
       trot_10_4_( gait_period_base, Vec4< int >( 0, 5, 5, 0 ), Vec4< int >( 4, 4, 4, 4 ), "Trot10_4" ),
       trot_8_3_( int( gait_period_base * 0.8 ), Vec4< int >( 0, 4, 4, 0 ), Vec4< int >( 3, 3, 3, 3 ), "Trot8_3" ),
       stand_( int( gait_period_base * 1.0 ), Vec4< int >( 0, 0, 0, 0 ), Vec4< int >( 10, 10, 10, 10 ), "Stand" ),

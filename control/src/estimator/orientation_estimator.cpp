@@ -1,4 +1,6 @@
 #include "estimator/orientation_estimator.hpp"
+#include <fstream>
+#include <iostream>
 
 /**
  * @brief Get quaternion, rotation matrix, angular velocity (body and world),
@@ -11,7 +13,7 @@ template < typename T > void CheaterOrientationEstimator< T >::Run() {
     this->state_estimator_data_.result->angular_velocity_in_body_frame = this->state_estimator_data_.cheater_state->angular_velocity_in_body_frame.template cast< T >();
     this->state_estimator_data_.result->angular_velocity_in_world_frame =
         this->state_estimator_data_.result->world2body_rotation_matrix.transpose() * this->state_estimator_data_.result->angular_velocity_in_body_frame;
-    this->state_estimator_data_.result->rpy                        = ori::QuatToRPY( this->state_estimator_data_.result->orientation );
+    this->state_estimator_data_.result->rpy                        = ori::QuatToRPY( this->state_estimator_data_.result->orientation );    
     this->state_estimator_data_.result->acceleration_in_body_frame = this->state_estimator_data_.cheater_state->acceleration.template cast< T >();
     this->state_estimator_data_.result->acceleration_in_world_frame =
         this->state_estimator_data_.result->world2body_rotation_matrix.transpose() * this->state_estimator_data_.result->acceleration_in_body_frame;
@@ -50,6 +52,30 @@ template < typename T > void VectorNavOrientationEstimator< T >::Run() {
     this->state_estimator_data_.result->orientation = ori::QuatProduct( this->state_estimator_data_.result->orientation, ori_cali_ );
 
     this->state_estimator_data_.result->rpy = ori::QuatToRPY( this->state_estimator_data_.result->orientation );
+// ====== 只清理一次 ======
+static bool clear_flag = true;
+if (clear_flag)
+{
+    std::ofstream clear_fout("quaternion_log.txt", std::ios::trunc); // trunc清空文件
+    clear_fout.close();
+    clear_flag = false;
+}
+
+// ====== 后续正常追加写入 ======
+std::ofstream fout("quaternion_log.txt", std::ios::app); // 追加模式
+if (fout.is_open()) {
+    auto& q = this->state_estimator_data_.result->orientation;
+    auto& rpy = this->state_estimator_data_.result->rpy; // roll, pitch, yaw
+    // 假设四元数顺序为 [w, x, y, z]
+    // 假设欧拉角单位为弧度
+    fout << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << " "
+         << rpy[0] << " " << rpy[1] << " " << rpy[2] << std::endl;
+    fout.close();
+} else {
+    std::cerr << "无法打开quaternion_log.txt文件!" << std::endl;
+}
+
+
 
     this->state_estimator_data_.result->world2body_rotation_matrix = ori::QuaternionToRotationMatrix( this->state_estimator_data_.result->orientation );
 
