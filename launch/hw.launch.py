@@ -119,7 +119,13 @@ def generate_launch_description():
     #     namespace=tita_namespace,
     #     output='screen',
     # )
-
+    hw_broadcaster = Node(
+        package='hw_broadcaster',
+        executable='hw_broadcaster_node',
+        output='screen',
+        parameters=[os.path.join(get_package_share_directory('hw_broadcaster'), 'config', 'param.yaml')],
+        namespace=prefix,
+    )
     command_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -139,6 +145,7 @@ def generate_launch_description():
         # start_controller,
         tita_controller_spawner,
         command_launch,
+        hw_broadcaster
     ]
 
     return LaunchDescription(nodes)
