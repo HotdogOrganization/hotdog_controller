@@ -4,7 +4,9 @@
 
 template < typename T >
 WbcCtrl< T >::WbcCtrl( FloatingBaseModel< T > model )
-    : full_config_( hotdog2::kNumActJoint + 7 ), tau_ff_( hotdog2::kNumActJoint ), des_jpos_( hotdog2::kNumActJoint ), des_jvel_( hotdog2::kNumActJoint ), wbc_lcm_( GetLcmUrl( 255 ) ) {
+    : full_config_( hotdog2::kNumActJoint + 7 ), tau_ff_( hotdog2::kNumActJoint ), des_jpos_( hotdog2::kNumActJoint ), des_jvel_( hotdog2::kNumActJoint )
+    // , wbc_lcm_( GetLcmUrl( 255 ) ) 
+    {
     iter_ = 0;
     full_config_.setZero();
 

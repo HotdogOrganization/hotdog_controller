@@ -250,8 +250,8 @@ template < typename T > void LocomotionCtrl< T >::LcmPublishData( ControlFsmData
     WBCtrl::wbc_data_lcm_.body_ori_cmd[ 3 ] = quat_des_[ 3 ];
     WBCtrl::wbc_data_lcm_.body_ori[ 3 ]     = WBCtrl::state_.body_orientation[ 3 ];
     // TODO: delete lcm publish , for independent thread to publish
-    if ( data.control_parameters->lcm_debug_switch == 1 )
-        WBCtrl::wbc_lcm_.publish( "wbc_lcm_data", &( WBCtrl::wbc_data_lcm_ ) );
+    // if ( data.control_parameters->lcm_debug_switch == 1 )
+    //     WBCtrl::wbc_lcm_.publish( "wbc_lcm_data", &( WBCtrl::wbc_data_lcm_ ) );
 }
 
 template class LocomotionCtrl< float >;

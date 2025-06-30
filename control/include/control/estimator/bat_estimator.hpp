@@ -4,7 +4,7 @@
 #include "lcm/lcm-cpp.hpp"
 
 #include "controllers/state_estimator_container.hpp"
-#include "header/lcm_type/bms_response_lcmt.hpp"
+// #include "header/lcm_type/bms_response_lcmt.hpp"
 #include "utilities/toolkit.hpp"
 
 /**
@@ -19,7 +19,7 @@ public:
     virtual void Run();
     virtual void Setup();
 
-    void HandleBmsLcm( const lcm::ReceiveBuffer* buf, const std::string& channel, const bms_response_lcmt* msg );
+    // void HandleBmsLcm( const lcm::ReceiveBuffer* buf, const std::string& channel, const bms_response_lcmt* msg );
 
 private:
     lcm::LCM bms_lcm_;

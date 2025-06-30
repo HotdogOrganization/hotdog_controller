@@ -55,10 +55,10 @@ void CommandInterface::ProcessGamepadCommand( const GamepadCommand& gamepad_cmd 
     gamepad_timer_.StartTimer();
 }
 
-void CommandInterface::ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd ) {
-    gamepad_cmd_.set( gamepad_cmd );
-    gamepad_timer_.StartTimer();
-}
+// void CommandInterface::ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd ) {
+//     gamepad_cmd_.set( gamepad_cmd );
+//     gamepad_timer_.StartTimer();
+// }
 
 void CommandInterface::ProcessRcCommand( const RcCommand* rc_cmd ) {
     memcpy( &rc_cmd_, rc_cmd, sizeof( RcCommand ) );
@@ -72,33 +72,33 @@ void CommandInterface::ProcessRcUdpCommand( const RcCommand* rc_udp_cmd ) {
     rc_udp_timer_.StartTimer();
 }
 
-void CommandInterface::ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd ) {
-    memcpy( &hotdog_lcm_cmd_, lcm_cmd, sizeof( motion_control_request_lcmt ) );
-    hotdog_lcm_timer_.StartTimer();
-}
+// void CommandInterface::ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd ) {
+//     memcpy( &hotdog_lcm_cmd_, lcm_cmd, sizeof( motion_control_request_lcmt ) );
+//     hotdog_lcm_timer_.StartTimer();
+// }
 
-void CommandInterface::ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd ) {
-    memcpy( &lcm_cmd_, lcm_cmd, sizeof( robot_control_cmd_lcmt ) );
-    lcm_timer_.StartTimer();
-}
-void CommandInterface::ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd ) {
-    memcpy( &motor_ctrl_cmd_, ctrl_cmd, sizeof( motor_ctrl_lcmt ) );
-    MotorCtrl_mode_flag_ = true;
-    MotorCtrl_LCM_timer_.StartTimer();
-}
+// void CommandInterface::ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd ) {
+//     memcpy( &lcm_cmd_, lcm_cmd, sizeof( robot_control_cmd_lcmt ) );
+//     lcm_timer_.StartTimer();
+// }
+// void CommandInterface::ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd ) {
+//     memcpy( &motor_ctrl_cmd_, ctrl_cmd, sizeof( motor_ctrl_lcmt ) );
+//     MotorCtrl_mode_flag_ = true;
+//     MotorCtrl_LCM_timer_.StartTimer();
+// }
 
-int CommandInterface::ProcessUserGaitFile( const file_send_lcmt* user_gait_msg ) {
-    std::cout << "[CommandInterface] Get user gait string " << user_gait_msg->data.substr( 0, 11 ) << " " << user_gait_msg->data.length() << " Bytes!" << std::endl;
-    if ( user_gait_msg->data.substr( 0, 10 ) == "# Gait Def" ) {
-        user_gait_file_ = user_gait_msg->data;
-        return 0;
-    }
-    else if ( user_gait_msg->data.substr( 0, 13 ) == "# Gait Params" ) {
-        user_gait_list_file_ = user_gait_msg->data;
-        return 0;
-    }
-    return 1;
-}
+// int CommandInterface::ProcessUserGaitFile( const file_send_lcmt* user_gait_msg ) {
+//     std::cout << "[CommandInterface] Get user gait string " << user_gait_msg->data.substr( 0, 11 ) << " " << user_gait_msg->data.length() << " Bytes!" << std::endl;
+//     if ( user_gait_msg->data.substr( 0, 10 ) == "# Gait Def" ) {
+//         user_gait_file_ = user_gait_msg->data;
+//         return 0;
+//     }
+//     else if ( user_gait_msg->data.substr( 0, 13 ) == "# Gait Params" ) {
+//         user_gait_list_file_ = user_gait_msg->data;
+//         return 0;
+//     }
+//     return 1;
+// }
 
 void CommandInterface::ZeroCmd( MotionControlCommand& cmd ) {
     int i          = 0;
@@ -189,13 +189,13 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
         Rc2Cmd( robotType );
         break;
     case kHotdog2LcmCmd:
-        Lcm2Cmd();
+        // Lcm2Cmd();
         break;
     case kHotdogLcmCmd:
-        HotdogLcm2Cmd();
+        // HotdogLcm2Cmd();
         break;
     case kMotorCmd:
-        MotorLcm2Cmd();
+        // MotorLcm2Cmd();
         break;
     default:
         Default2Cmd( *control_mode, *gait_id );
@@ -210,9 +210,9 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
             while ( !cmd_list_.empty() )
                 cmd_list_.pop();
             std::cout << "[CommandInterface] Robot unresponse! Cmd queue set to mode=" << cmd_queue_clear_flag_ << std::endl;
-            lcm_cmd_.mode         = cmd_queue_clear_flag_;
-            lcm_cmd_.duration     = 0;
-            lcm_cmd_.gait_id      = 0;
+            // lcm_cmd_.mode         = cmd_queue_clear_flag_;
+            // lcm_cmd_.duration     = 0;
+            // lcm_cmd_.gait_id      = 0;
             command_.mode         = cmd_queue_clear_flag_;
             command_.duration     = 0;
             command_.gait_id      = 0;
@@ -923,159 +923,159 @@ void CommandInterface::Rc2Cmd( const RobotType& robotType ) {
     cmd_list_.push( cmd_cur_ );
 }
 
-void CommandInterface::MotorLcm2Cmd() {
-    cmd_cur_.cmd_source     = kMotorCmd;
-    cmd_cur_.mode           = MotionMode::kMotorCtrl;
-    cmd_cur_.duration       = 0;
-    cmd_cur_.motor_ctrl     = motor_ctrl_cmd_;
-    cmd_cur_.cmd_time_delay = MotorCtrl_LCM_timer_.GetElapsedMilliseconds();
-    interface_iter_         = 0;
-    while ( !cmd_list_.empty() )
-        cmd_list_.pop();
-    cmd_list_.push( cmd_cur_ );
-}
+// void CommandInterface::MotorLcm2Cmd() {
+//     cmd_cur_.cmd_source     = kMotorCmd;
+//     cmd_cur_.mode           = MotionMode::kMotorCtrl;
+//     cmd_cur_.duration       = 0;
+//     cmd_cur_.motor_ctrl     = motor_ctrl_cmd_;
+//     cmd_cur_.cmd_time_delay = MotorCtrl_LCM_timer_.GetElapsedMilliseconds();
+//     interface_iter_         = 0;
+//     while ( !cmd_list_.empty() )
+//         cmd_list_.pop();
+//     cmd_list_.push( cmd_cur_ );
+// }
 
-void CommandInterface::HotdogLcm2Cmd() {
-    cmd_cur_.cmd_source = kHotdogLcmCmd;
-    Pattern2Mode( hotdog_lcm_cmd_.pattern, hotdog_lcm_cmd_.order, cmd_cur_.mode, cmd_cur_.gait_id );
-    cmd_cur_.vel_des[ 0 ] = hotdog_lcm_cmd_.linear[ 0 ];
-    cmd_cur_.vel_des[ 1 ] = hotdog_lcm_cmd_.linear[ 1 ];
-    if ( cmd_cur_.mode == MotionMode::kQpStand ) {
-        for ( int i = 0; i < 3; i++ ) {
-            cmd_cur_.rpy_des[ i ] = hotdog_lcm_cmd_.angular[ i ];
-        }
-    }
-    else if ( cmd_cur_.mode == MotionMode::kLocomotion ) {
-        cmd_cur_.rpy_des[ 0 ] = hotdog_lcm_cmd_.angular[ 0 ];
-        cmd_cur_.rpy_des[ 1 ] = hotdog_lcm_cmd_.angular[ 1 ];
-        cmd_cur_.vel_des[ 2 ] = hotdog_lcm_cmd_.angular[ 2 ];
-    }
-    cmd_cur_.pos_des[ 0 ]     = 0;
-    cmd_cur_.pos_des[ 1 ]     = 0;
-    cmd_cur_.pos_des[ 2 ]     = hotdog_lcm_cmd_.body_height;
-    cmd_cur_.step_height[ 0 ] = hotdog_lcm_cmd_.gait_height;
-    cmd_cur_.duration         = 0;
+// void CommandInterface::HotdogLcm2Cmd() {
+//     cmd_cur_.cmd_source = kHotdogLcmCmd;
+//     Pattern2Mode( hotdog_lcm_cmd_.pattern, hotdog_lcm_cmd_.order, cmd_cur_.mode, cmd_cur_.gait_id );
+//     cmd_cur_.vel_des[ 0 ] = hotdog_lcm_cmd_.linear[ 0 ];
+//     cmd_cur_.vel_des[ 1 ] = hotdog_lcm_cmd_.linear[ 1 ];
+//     if ( cmd_cur_.mode == MotionMode::kQpStand ) {
+//         for ( int i = 0; i < 3; i++ ) {
+//             cmd_cur_.rpy_des[ i ] = hotdog_lcm_cmd_.angular[ i ];
+//         }
+//     }
+//     else if ( cmd_cur_.mode == MotionMode::kLocomotion ) {
+//         cmd_cur_.rpy_des[ 0 ] = hotdog_lcm_cmd_.angular[ 0 ];
+//         cmd_cur_.rpy_des[ 1 ] = hotdog_lcm_cmd_.angular[ 1 ];
+//         cmd_cur_.vel_des[ 2 ] = hotdog_lcm_cmd_.angular[ 2 ];
+//     }
+//     cmd_cur_.pos_des[ 0 ]     = 0;
+//     cmd_cur_.pos_des[ 1 ]     = 0;
+//     cmd_cur_.pos_des[ 2 ]     = hotdog_lcm_cmd_.body_height;
+//     cmd_cur_.step_height[ 0 ] = hotdog_lcm_cmd_.gait_height;
+//     cmd_cur_.duration         = 0;
 
-    if ( cmd_cur_.duration == 0 ) {
-        if ( cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0 ) {
-            return;
-        }
-        else {
-            while ( !cmd_list_.empty() )
-                cmd_list_.pop();
-        }
-    }
-    else {
-        while ( cmd_list_.size() > 0 ) {
-            if ( cmd_list_.front().duration == 0 )
-                cmd_list_.pop();
-            else {
-                break;
-            }
-        }
-    }
+//     if ( cmd_cur_.duration == 0 ) {
+//         if ( cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0 ) {
+//             return;
+//         }
+//         else {
+//             while ( !cmd_list_.empty() )
+//                 cmd_list_.pop();
+//         }
+//     }
+//     else {
+//         while ( cmd_list_.size() > 0 ) {
+//             if ( cmd_list_.front().duration == 0 )
+//                 cmd_list_.pop();
+//             else {
+//                 break;
+//             }
+//         }
+//     }
 
-    interface_iter_ = 0;
-    cmd_list_.push( cmd_cur_ );
-}
-void CommandInterface::Lcm2Cmd() {
-    int i;
-    if ( lcm_cmd_.life_count == life_count_ || lcm_cmd_.mode == -1 ) {
-        /*
-        //连续动作超过2s不更新life count速度降为0,3S后站立，3.5s后趴下
-        if ( lcm_cmd_.duration == 0 && lcm_cmd_.mode == MotionMode::kLocomotion && lcm_cmd_.gait_id != GaitId::kStand && lcm_cmd_.gait_id != GaitId::kStandNoPr ) {
-            if ( lcm_duration_timer_.GetElapsedMilliseconds() > 2000 ) {
-                for ( i = 0; i < 3; i++ )
-                    cmd_cur_.vel_des[ i ] = 0;
-            }
-            else if ( lcm_duration_timer_.GetElapsedMilliseconds() > 3000 ) {
-                cmd_cur_.mode = MotionMode::kRecoveryStand;
-            }
-            else if ( lcm_duration_timer_.GetElapsedMilliseconds() > 3500 ) {
-                cmd_cur_.mode = MotionMode::kPureDamper;
-            }
-        }
-        */
-        return;
-    }
-    lcm_duration_timer_.StartTimer();
+//     interface_iter_ = 0;
+//     cmd_list_.push( cmd_cur_ );
+// }
+// void CommandInterface::Lcm2Cmd() {
+//     int i;
+//     if ( lcm_cmd_.life_count == life_count_ || lcm_cmd_.mode == -1 ) {
+//         /*
+//         //连续动作超过2s不更新life count速度降为0,3S后站立，3.5s后趴下
+//         if ( lcm_cmd_.duration == 0 && lcm_cmd_.mode == MotionMode::kLocomotion && lcm_cmd_.gait_id != GaitId::kStand && lcm_cmd_.gait_id != GaitId::kStandNoPr ) {
+//             if ( lcm_duration_timer_.GetElapsedMilliseconds() > 2000 ) {
+//                 for ( i = 0; i < 3; i++ )
+//                     cmd_cur_.vel_des[ i ] = 0;
+//             }
+//             else if ( lcm_duration_timer_.GetElapsedMilliseconds() > 3000 ) {
+//                 cmd_cur_.mode = MotionMode::kRecoveryStand;
+//             }
+//             else if ( lcm_duration_timer_.GetElapsedMilliseconds() > 3500 ) {
+//                 cmd_cur_.mode = MotionMode::kPureDamper;
+//             }
+//         }
+//         */
+//         return;
+//     }
+//     lcm_duration_timer_.StartTimer();
 
-    life_count_               = lcm_cmd_.life_count;
-    cmd_cur_.mode             = lcm_cmd_.mode;
-    cmd_cur_.gait_id          = lcm_cmd_.gait_id;
-    cmd_cur_.contact          = lcm_cmd_.contact;
-    cmd_cur_.value            = lcm_cmd_.value;
-    cmd_cur_.duration         = lcm_cmd_.duration / 2;
-    cmd_cur_.cmd_source       = kHotdog2LcmCmd;
-    cmd_cur_.step_height[ 0 ] = lcm_cmd_.step_height[ 0 ];
-    cmd_cur_.step_height[ 1 ] = lcm_cmd_.step_height[ 1 ];
-    for ( i = 0; i < 3; i++ ) {
-        cmd_cur_.vel_des[ i ]       = lcm_cmd_.vel_des[ i ];
-        cmd_cur_.rpy_des[ i ]       = lcm_cmd_.rpy_des[ i ];
-        cmd_cur_.pos_des[ i ]       = lcm_cmd_.pos_des[ i ];
-        cmd_cur_.acc_des[ i ]       = lcm_cmd_.acc_des[ i ];
-        cmd_cur_.acc_des[ i + 3 ]   = lcm_cmd_.acc_des[ i + 3 ];
-        cmd_cur_.foot_pose[ i ]     = lcm_cmd_.foot_pose[ i ];
-        cmd_cur_.foot_pose[ i + 3 ] = lcm_cmd_.foot_pose[ i + 3 ];
-        cmd_cur_.ctrl_point[ i ]    = lcm_cmd_.ctrl_point[ i ];
-    }
+//     life_count_               = lcm_cmd_.life_count;
+//     cmd_cur_.mode             = lcm_cmd_.mode;
+//     cmd_cur_.gait_id          = lcm_cmd_.gait_id;
+//     cmd_cur_.contact          = lcm_cmd_.contact;
+//     cmd_cur_.value            = lcm_cmd_.value;
+//     cmd_cur_.duration         = lcm_cmd_.duration / 2;
+//     cmd_cur_.cmd_source       = kHotdog2LcmCmd;
+//     cmd_cur_.step_height[ 0 ] = lcm_cmd_.step_height[ 0 ];
+//     cmd_cur_.step_height[ 1 ] = lcm_cmd_.step_height[ 1 ];
+//     for ( i = 0; i < 3; i++ ) {
+//         cmd_cur_.vel_des[ i ]       = lcm_cmd_.vel_des[ i ];
+//         cmd_cur_.rpy_des[ i ]       = lcm_cmd_.rpy_des[ i ];
+//         cmd_cur_.pos_des[ i ]       = lcm_cmd_.pos_des[ i ];
+//         cmd_cur_.acc_des[ i ]       = lcm_cmd_.acc_des[ i ];
+//         cmd_cur_.acc_des[ i + 3 ]   = lcm_cmd_.acc_des[ i + 3 ];
+//         cmd_cur_.foot_pose[ i ]     = lcm_cmd_.foot_pose[ i ];
+//         cmd_cur_.foot_pose[ i + 3 ] = lcm_cmd_.foot_pose[ i + 3 ];
+//         cmd_cur_.ctrl_point[ i ]    = lcm_cmd_.ctrl_point[ i ];
+//     }
 
-    // Don't clear the list when push kMotion cmd even the duration = 0
-    if ( cmd_cur_.duration == 0 && cmd_cur_.mode != MotionMode::kMotion ) {
-        while ( !cmd_list_.empty() )
-            cmd_list_.pop();
-        interface_iter_   = 0;
-        motion_list_step_ = 0;
-        motion_list_size_ = 0;
-    }
-    else {
-        if ( cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0 )
-            return;
-        while ( cmd_list_.size() > 0 ) {
-            if ( cmd_list_.front().duration == 0 ) {
-                cmd_list_.pop();
-                interface_iter_ = 0;
-            }
-            else {
-                break;
-            }
-        }
-    }
-    // Insert transition command for lie down to side， only tirgger once
-    if ( lcm_cmd_.mode == MotionMode::kRecoveryStand && ( lcm_cmd_.gait_id == 17 || lcm_cmd_.gait_id == 18 ) && lcm_cmd_.duration == 0 ) {
-        cmd_cur_.gait_id  = 0;
-        cmd_cur_.duration = 4;
-        cmd_list_.push( cmd_cur_ );
-        cmd_cur_.gait_id  = lcm_cmd_.gait_id;
-        cmd_cur_.duration = 0;
-    }
-    if ( lcm_cmd_.mode == MotionMode::kLocomotion && lcm_cmd_.gait_id == kUserGait ) {
-        motion_list_step_++;  // List remaining actions
-        motion_list_size_++;  // The total list size
-        // std::cout <<"start motion_list_step_ " << motion_list_step_ <<std::endl;
-    }
+//     // Don't clear the list when push kMotion cmd even the duration = 0
+//     if ( cmd_cur_.duration == 0 && cmd_cur_.mode != MotionMode::kMotion ) {
+//         while ( !cmd_list_.empty() )
+//             cmd_list_.pop();
+//         interface_iter_   = 0;
+//         motion_list_step_ = 0;
+//         motion_list_size_ = 0;
+//     }
+//     else {
+//         if ( cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0 )
+//             return;
+//         while ( cmd_list_.size() > 0 ) {
+//             if ( cmd_list_.front().duration == 0 ) {
+//                 cmd_list_.pop();
+//                 interface_iter_ = 0;
+//             }
+//             else {
+//                 break;
+//             }
+//         }
+//     }
+//     // Insert transition command for lie down to side， only tirgger once
+//     if ( lcm_cmd_.mode == MotionMode::kRecoveryStand && ( lcm_cmd_.gait_id == 17 || lcm_cmd_.gait_id == 18 ) && lcm_cmd_.duration == 0 ) {
+//         cmd_cur_.gait_id  = 0;
+//         cmd_cur_.duration = 4;
+//         cmd_list_.push( cmd_cur_ );
+//         cmd_cur_.gait_id  = lcm_cmd_.gait_id;
+//         cmd_cur_.duration = 0;
+//     }
+//     if ( lcm_cmd_.mode == MotionMode::kLocomotion && lcm_cmd_.gait_id == kUserGait ) {
+//         motion_list_step_++;  // List remaining actions
+//         motion_list_size_++;  // The total list size
+//         // std::cout <<"start motion_list_step_ " << motion_list_step_ <<std::endl;
+//     }
 
-    if ( cmd_cur_.mode == MotionMode::kLocomotion && cmd_cur_.value & 0x04 ) {
-        int ret = system( "mount -o remount,rw /mnt/misc/" );  // For factory speed offset set
-        printf( "[CommandInterface]Factory speed offset lcm set, Remount misc %d\n", ret );
-        speed_offset_rc_flag_    = true;
-        speed_offset_rc_trigger_ = 1;
-        speed_offset_count_      = 0;
-    }
-    else {
-        speed_offset_count_++;
-        speed_offset_rc_trigger_ = 0;
-    }
+//     if ( cmd_cur_.mode == MotionMode::kLocomotion && cmd_cur_.value & 0x04 ) {
+//         int ret = system( "mount -o remount,rw /mnt/misc/" );  // For factory speed offset set
+//         printf( "[CommandInterface]Factory speed offset lcm set, Remount misc %d\n", ret );
+//         speed_offset_rc_flag_    = true;
+//         speed_offset_rc_trigger_ = 1;
+//         speed_offset_count_      = 0;
+//     }
+//     else {
+//         speed_offset_count_++;
+//         speed_offset_rc_trigger_ = 0;
+//     }
 
-    cmd_list_.push( cmd_cur_ );
-    static int lcm_mode_old = 0, lcm_gaitid_old = 0;
-    if ( ( cmd_cur_.mode != lcm_mode_old ) || ( cmd_cur_.gait_id != lcm_gaitid_old ) )
-        printf( "[CommandInterface]Push command_=%d %d vel=%.2f %.2f %.2f rpy=%.2f %.2f %.2f pos=%.2f %.2f %.2f dura=%d list_size=%ld \n", cmd_cur_.mode, cmd_cur_.gait_id, cmd_cur_.vel_des[ 0 ],
-                cmd_cur_.vel_des[ 1 ], cmd_cur_.vel_des[ 2 ], cmd_cur_.rpy_des[ 0 ], cmd_cur_.rpy_des[ 1 ], cmd_cur_.rpy_des[ 2 ], cmd_cur_.pos_des[ 0 ], cmd_cur_.pos_des[ 1 ], cmd_cur_.pos_des[ 2 ],
-                cmd_cur_.duration, cmd_list_.size() );
-    lcm_mode_old   = cmd_cur_.mode;
-    lcm_gaitid_old = cmd_cur_.gait_id;
-}
+//     cmd_list_.push( cmd_cur_ );
+//     static int lcm_mode_old = 0, lcm_gaitid_old = 0;
+//     if ( ( cmd_cur_.mode != lcm_mode_old ) || ( cmd_cur_.gait_id != lcm_gaitid_old ) )
+//         printf( "[CommandInterface]Push command_=%d %d vel=%.2f %.2f %.2f rpy=%.2f %.2f %.2f pos=%.2f %.2f %.2f dura=%d list_size=%ld \n", cmd_cur_.mode, cmd_cur_.gait_id, cmd_cur_.vel_des[ 0 ],
+//                 cmd_cur_.vel_des[ 1 ], cmd_cur_.vel_des[ 2 ], cmd_cur_.rpy_des[ 0 ], cmd_cur_.rpy_des[ 1 ], cmd_cur_.rpy_des[ 2 ], cmd_cur_.pos_des[ 0 ], cmd_cur_.pos_des[ 1 ], cmd_cur_.pos_des[ 2 ],
+//                 cmd_cur_.duration, cmd_list_.size() );
+//     lcm_mode_old   = cmd_cur_.mode;
+//     lcm_gaitid_old = cmd_cur_.gait_id;
+// }
 
 void CommandInterface::Default2Cmd( int control_mode, int cmpc_gait ) {
     ZeroCmd( command_ );
@@ -1777,58 +1777,58 @@ std::vector< std::string > CommandInterface::Get( const std::string& str, const 
     return Split( value, "," );
 }
 
-void CommandInterface::ProcessLcmMotionCommand( const trajectory_command_lcmt* lcm_cmd ) {
-    cmd_tmp_.cmd_source = kHotdogLcmCmd;
-    cmd_tmp_.mode       = MotionMode::kMotion;
-    if ( lcm_cmd->motionType == "pose" || lcm_cmd->motionType == "swingleg" || lcm_cmd->motionType == "transition" ) {
-        cmd_tmp_.mode = MotionMode::kPoseCtrl;
-        if ( lcm_cmd->motionType == "transition" )
-            cmd_tmp_.gait_id = 5;
-        else
-            cmd_tmp_.gait_id = 1;
-    }
-    else if ( lcm_cmd->motionType == "locomotion" ) {
-        cmd_tmp_.mode    = MotionMode::kLocomotion;
-        cmd_tmp_.gait_id = lcm_cmd->locomotion_gait;
-    }
-    else if ( lcm_cmd->motionType == "torctrlposture" ) {
-        cmd_tmp_.mode    = MotionMode::kQpStand;
-        cmd_tmp_.gait_id = 3;
-    }
-    else if ( lcm_cmd->motionType == "jump" ) {
-        cmd_tmp_.mode    = MotionMode::kForceJump;
-        cmd_tmp_.gait_id = 4;
-    }
-    else {
-        cmd_tmp_.mode    = MotionMode::kPoseCtrl;
-        cmd_tmp_.gait_id = 5;
-    }
-    for ( int i = 0; i < 3; i++ ) {
-        cmd_tmp_.rpy_des[ i ]    = lcm_cmd->pose_body_cmd[ i ];
-        cmd_tmp_.pos_des[ i ]    = lcm_cmd->pose_body_cmd[ i + 3 ];
-        cmd_tmp_.foot_pose[ i ]  = lcm_cmd->pose_foot_cmd[ i ];
-        cmd_tmp_.ctrl_point[ i ] = lcm_cmd->pose_ctrl_point[ i ];
+// void CommandInterface::ProcessLcmMotionCommand( const trajectory_command_lcmt* lcm_cmd ) {
+//     cmd_tmp_.cmd_source = kHotdogLcmCmd;
+//     cmd_tmp_.mode       = MotionMode::kMotion;
+//     if ( lcm_cmd->motionType == "pose" || lcm_cmd->motionType == "swingleg" || lcm_cmd->motionType == "transition" ) {
+//         cmd_tmp_.mode = MotionMode::kPoseCtrl;
+//         if ( lcm_cmd->motionType == "transition" )
+//             cmd_tmp_.gait_id = 5;
+//         else
+//             cmd_tmp_.gait_id = 1;
+//     }
+//     else if ( lcm_cmd->motionType == "locomotion" ) {
+//         cmd_tmp_.mode    = MotionMode::kLocomotion;
+//         cmd_tmp_.gait_id = lcm_cmd->locomotion_gait;
+//     }
+//     else if ( lcm_cmd->motionType == "torctrlposture" ) {
+//         cmd_tmp_.mode    = MotionMode::kQpStand;
+//         cmd_tmp_.gait_id = 3;
+//     }
+//     else if ( lcm_cmd->motionType == "jump" ) {
+//         cmd_tmp_.mode    = MotionMode::kForceJump;
+//         cmd_tmp_.gait_id = 4;
+//     }
+//     else {
+//         cmd_tmp_.mode    = MotionMode::kPoseCtrl;
+//         cmd_tmp_.gait_id = 5;
+//     }
+//     for ( int i = 0; i < 3; i++ ) {
+//         cmd_tmp_.rpy_des[ i ]    = lcm_cmd->pose_body_cmd[ i ];
+//         cmd_tmp_.pos_des[ i ]    = lcm_cmd->pose_body_cmd[ i + 3 ];
+//         cmd_tmp_.foot_pose[ i ]  = lcm_cmd->pose_foot_cmd[ i ];
+//         cmd_tmp_.ctrl_point[ i ] = lcm_cmd->pose_ctrl_point[ i ];
 
-        cmd_tmp_.vel_des[ i ]     = lcm_cmd->locomotion_vel[ i ];
-        cmd_tmp_.acc_des[ i ]     = lcm_cmd->jump_w_acc[ i ];
-        cmd_tmp_.acc_des[ i + 3 ] = lcm_cmd->jump_x_acc[ i ];
-    }
-    if ( lcm_cmd->motionType == "jump" )
-        cmd_tmp_.contact = ( lcm_cmd->jump_contact[ 3 ] > 0 ? 1 : 0 ) * 8 + ( lcm_cmd->jump_contact[ 2 ] > 0 ? 1 : 0 ) * 4 + ( lcm_cmd->jump_contact[ 1 ] > 0 ? 1 : 0 ) * 2
-                           + ( lcm_cmd->jump_contact[ 0 ] > 0 ? 1 : 0 );
+//         cmd_tmp_.vel_des[ i ]     = lcm_cmd->locomotion_vel[ i ];
+//         cmd_tmp_.acc_des[ i ]     = lcm_cmd->jump_w_acc[ i ];
+//         cmd_tmp_.acc_des[ i + 3 ] = lcm_cmd->jump_x_acc[ i ];
+//     }
+//     if ( lcm_cmd->motionType == "jump" )
+//         cmd_tmp_.contact = ( lcm_cmd->jump_contact[ 3 ] > 0 ? 1 : 0 ) * 8 + ( lcm_cmd->jump_contact[ 2 ] > 0 ? 1 : 0 ) * 4 + ( lcm_cmd->jump_contact[ 1 ] > 0 ? 1 : 0 ) * 2
+//                            + ( lcm_cmd->jump_contact[ 0 ] > 0 ? 1 : 0 );
 
-    else
-        cmd_tmp_.contact = ( lcm_cmd->pose_foot_support[ 3 ] > 0 ? 1 : 0 ) * 8 + ( lcm_cmd->pose_foot_support[ 2 ] > 0 ? 1 : 0 ) * 4 + ( lcm_cmd->pose_foot_support[ 1 ] > 0 ? 1 : 0 ) * 2
-                           + ( lcm_cmd->pose_foot_support[ 0 ] > 0 ? 1 : 0 );
-    if ( lcm_cmd->motionType == "transition" ) {
-        cmd_tmp_.pos_des[ 2 ] = lcm_cmd->trans_height;
-    }
-    cmd_tmp_.duration   = lcm_cmd->duration / 2;
-    cmd_tmp_.cmd_source = kHotdogLcmCmd;
+//     else
+//         cmd_tmp_.contact = ( lcm_cmd->pose_foot_support[ 3 ] > 0 ? 1 : 0 ) * 8 + ( lcm_cmd->pose_foot_support[ 2 ] > 0 ? 1 : 0 ) * 4 + ( lcm_cmd->pose_foot_support[ 1 ] > 0 ? 1 : 0 ) * 2
+//                            + ( lcm_cmd->pose_foot_support[ 0 ] > 0 ? 1 : 0 );
+//     if ( lcm_cmd->motionType == "transition" ) {
+//         cmd_tmp_.pos_des[ 2 ] = lcm_cmd->trans_height;
+//     }
+//     cmd_tmp_.duration   = lcm_cmd->duration / 2;
+//     cmd_tmp_.cmd_source = kHotdogLcmCmd;
 
-    motion_list_step_ = cmd_list_.size();  // List remaining actions
-    motion_list_size_ = cmd_list_.size();  // The total list size
+//     motion_list_step_ = cmd_list_.size();  // List remaining actions
+//     motion_list_size_ = cmd_list_.size();  // The total list size
 
-    cmd_list_.push( cmd_tmp_ );
-    hotdog_lcm_timer_.StartTimer();
-}
+//     cmd_list_.push( cmd_tmp_ );
+//     hotdog_lcm_timer_.StartTimer();
+// }

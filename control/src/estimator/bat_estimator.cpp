@@ -6,7 +6,7 @@
  *
  */
 template < typename T > void BatEstimator< T >::Setup() {
-    bms_lcm_.subscribe( "bms_data", &BatEstimator::HandleBmsLcm, this );
+    // bms_lcm_.subscribe( "bms_data", &BatEstimator::HandleBmsLcm, this );
     iter_ = 0;
 }
 
@@ -22,23 +22,23 @@ template < typename T > void BatEstimator< T >::Run() {
     this->state_estimator_data_.result->is_charging    = is_charging_;
 }
 
-template < typename T > void BatEstimator< T >::HandleBmsLcm( const lcm::ReceiveBuffer* buf, const std::string& channel, const bms_response_lcmt* msg ) {
-    ( void )buf;
-    if ( channel == "bms_data" ) {
-        if ( msg->status & 0x02 ) {
-            low_bat_ = true;
-        }
-        else {
-            low_bat_ = false;
-        }
-        if ( msg->status & 0x01 ) {
-            is_charging_ = true;
-        }
-        else {
-            is_charging_ = false;
-        }
-    }
-}
+// template < typename T > void BatEstimator< T >::HandleBmsLcm( const lcm::ReceiveBuffer* buf, const std::string& channel, const bms_response_lcmt* msg ) {
+//     ( void )buf;
+//     if ( channel == "bms_data" ) {
+//         if ( msg->status & 0x02 ) {
+//             low_bat_ = true;
+//         }
+//         else {
+//             low_bat_ = false;
+//         }
+//         if ( msg->status & 0x01 ) {
+//             is_charging_ = true;
+//         }
+//         else {
+//             is_charging_ = false;
+//         }
+//     }
+// }
 
 template class BatEstimator< float >;
 template class BatEstimator< double >;

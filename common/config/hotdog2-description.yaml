@@ -44,7 +44,8 @@ knee_inertia  :  [0.013334051, 0.0, 0.000103,
                   0.000103, 0.0, 0.000149]
 knee_link_length  : 0.208     # knee_length
 
-foot_radius  :  0.0225
+# foot_radius  :  0.0225
+foot_radius  :  0.0
 
 abad_gear_ratio : 9.
 hip_gear_ratio : 9.
