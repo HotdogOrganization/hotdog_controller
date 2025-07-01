@@ -6,6 +6,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/joy.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "sopu_msgs/msg/motor_command.hpp"
@@ -14,11 +15,74 @@
 #include "sim_utilities/imu_types.hpp"
 #include "sim_utilities/visualization_data.hpp"
 #include "command_interface/command_interface.hpp"
+#include "command_interface/gamepad_command.hpp"
+#include "command_interface/keyboard_command.hpp"
+#include "command_interface/rc_command.hpp"
 
 namespace hotdog_locomotion
 {
+
+struct JoyData
+{
+  std::vector<float> axes;
+  std::vector<int32_t> buttons;
+};
+
 namespace msg_conversion
 {
+
+static inline KeyboardCommand ConvertToKeyboardCommand(const JoyData& joy_data)
+{
+  KeyboardCommand keyboard_command;
+  keyboard_command.zero();
+  // Button 映射
+  // 安全判断下标，防止越界
+  if (joy_data.buttons.size() > 2) {
+    keyboard_command.pureDumpButton      = (joy_data.buttons[0] != 0);
+    keyboard_command.recoveryStandButton = (joy_data.buttons[1] != 0);
+    keyboard_command.balanceStandButton  = (joy_data.buttons[2] != 0);
+  }
+  if (joy_data.buttons.size() > 3) {
+    keyboard_command.locomotionButton    = (joy_data.buttons[3] != 0);
+  }
+
+  // Axes 映射
+  if (joy_data.axes.size() > 0) keyboard_command.xVel      = joy_data.axes[0];
+  if (joy_data.axes.size() > 1) keyboard_command.yVel      = joy_data.axes[1];
+  if (joy_data.axes.size() > 2) keyboard_command.rollPos   = joy_data.axes[2];
+  if (joy_data.axes.size() > 3) keyboard_command.pitchPos  = joy_data.axes[3];
+  if (joy_data.axes.size() > 4) keyboard_command.yawPos    = joy_data.axes[4];
+  if (joy_data.axes.size() > 5) keyboard_command.yawVel    = joy_data.axes[5];
+  if (joy_data.axes.size() > 6) keyboard_command.heightPos = joy_data.axes[6];
+  // std::cout << "Keyboard Command: " << keyboard_command.ToString() << std::endl;
+  return keyboard_command;
+}
+
+
+static inline GamepadCommand ConvertToGamepadCommand(const sensor_msgs::msg::Joy& joy_msg)
+{
+  GamepadCommand gamepad_command;
+  gamepad_command.leftBumper = joy_msg.buttons[6] > 0;  // LB
+  gamepad_command.rightBumper = joy_msg.buttons[7] > 0;  // RB
+  gamepad_command.leftTriggerButton = joy_msg.buttons[8] > 0;  // LT
+  gamepad_command.rightTriggerButton = joy_msg.buttons[9] > 0;  // RT
+  gamepad_command.back = joy_msg.buttons[10] > 0;  // Back/Select button
+  gamepad_command.start = joy_msg.buttons[11] > 0;  // Start button
+  gamepad_command.a = joy_msg.buttons[0] > 0;
+  gamepad_command.b = joy_msg.buttons[1] > 0;
+  gamepad_command.x = joy_msg.buttons[3] > 0;
+  gamepad_command.y = joy_msg.buttons[4] > 0;
+  gamepad_command.leftStickButton = joy_msg.buttons[13] > 0;
+  gamepad_command.rightStickButton = joy_msg.buttons[14] > 0;
+  gamepad_command.leftStickAnalog[0] = joy_msg.axes[0];
+  gamepad_command.leftStickAnalog[1] = joy_msg.axes[1];
+  gamepad_command.rightStickAnalog[0] = joy_msg.axes[2];
+  gamepad_command.rightStickAnalog[1] = joy_msg.axes[3];
+  // std::cout << "Gamepad Command: " << gamepad_command.ToString() << std::endl;
+
+  return gamepad_command;
+}
+
 
 static inline VectorNavData ConvertToVectorNavData(const float* quat, const float* gyro, const float* accl)
 {

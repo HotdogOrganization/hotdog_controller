@@ -107,8 +107,9 @@ protected:
   void cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg);
   void posestamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
   void fsm_goal_cb(const std_msgs::msg::String::SharedPtr msg);
+  void keyboard_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
   void joy_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
-  
+  void rc_cb(const sensor_msgs::msg::Joy::SharedPtr msg);
   //接收函数
   void imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg);
   void motor_status_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg);
@@ -116,12 +117,13 @@ protected:
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_subscription_;
   rclcpp::Subscription<sopu_msgs::msg::MotorStatus>::SharedPtr motor_status_subscription_;
 
-
   void odom_cb();
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscription_;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr posestamped_subscription_;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr fsm_goal_subscription_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr keyboard_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr rc_subscription_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
   rclcpp::TimerBase::SharedPtr odom_timer_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster_;
@@ -166,15 +168,21 @@ protected: // TODO:
   float motor_pos_[12];
   float motor_vel_[12];
   float torque_[12];
-  SimulationBridge::JoyData joy_data_;
+  JoyData joy_data_;
   int mode_ = 0;
   bool init_flag_ = false;
 
   std::unique_ptr<SimulationBridge> simulation_bridge_;
   std::unique_ptr<RobotController> hotdog_controller_;
   
+  GamepadCommand gamepad_command_;
+  KeyboardCommand keyboard_command_;
+  RcCommand rc_command_;
+
   std::mutex joy_data_mutex_;
   bool is_joy_received_ = false;
+  bool is_keyboard_received_ = false;
+  bool is_rc_received_ = false;
 
   bool sim_mode_ = false; // 是否为仿真模式
 

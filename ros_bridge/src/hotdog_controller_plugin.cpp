@@ -71,10 +71,20 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       tita_topic::manager_key_command, rclcpp::SensorDataQoS().reliable(),
       std::bind(&HotdogControllerPlugin::fsm_goal_cb, this, std::placeholders::_1));
 
+  keyboard_subscription_ =
+    get_node()->create_subscription<sensor_msgs::msg::Joy>(
+      tita_topic::manager_hotdog_keyboard, rclcpp::SensorDataQoS().reliable(),
+      std::bind(&HotdogControllerPlugin::keyboard_cb, this, std::placeholders::_1));
+
   joy_subscription_ =
     get_node()->create_subscription<sensor_msgs::msg::Joy>(
-      tita_topic::manager_hotdog_key, rclcpp::SensorDataQoS().reliable(),
+      tita_topic::manager_hotdog_joy, rclcpp::SensorDataQoS().reliable(),
       std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
+
+  rc_subscription_ =
+    get_node()->create_subscription<sensor_msgs::msg::Joy>(
+      tita_topic::manager_hotdog_rc, rclcpp::SensorDataQoS().reliable(),
+      std::bind(&HotdogControllerPlugin::rc_cb, this, std::placeholders::_1));
 
   imu_subscription_ = get_node()->create_subscription<sensor_msgs::msg::Imu>(
     "/imu/data_raw", rclcpp::SensorDataQoS(),
@@ -83,8 +93,8 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
   motor_status_subscription_ = get_node()->create_subscription<sopu_msgs::msg::MotorStatus>(
       "/motor_status", rclcpp::SensorDataQoS(),
       std::bind(&HotdogControllerPlugin::motor_status_cb, this, std::placeholders::_1));
-
-  odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+      
+  odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", rclcpp::SensorDataQoS().reliable());
   
   // motor_status_publisher_
   //   = get_node()->create_publisher<sopu_msgs::msg::MotorStatus>(
@@ -340,15 +350,36 @@ void HotdogControllerPlugin::fsm_goal_cb(
     mode_ = 0;
 }
 
-void HotdogControllerPlugin::joy_cb(
+void HotdogControllerPlugin::keyboard_cb(
   const sensor_msgs::msg::Joy::SharedPtr msg)
 {
   {
     std::lock_guard<std::mutex> lock(joy_data_mutex_);
     joy_data_.axes = msg->axes;
     joy_data_.buttons = msg->buttons;
+    keyboard_command_ = msg_conversion::ConvertToKeyboardCommand(joy_data_);
+  }
+  is_keyboard_received_ = true;
+}
+
+void HotdogControllerPlugin::joy_cb(
+  const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+  {
+    std::lock_guard<std::mutex> lock(joy_data_mutex_);
+    gamepad_command_ = msg_conversion::ConvertToGamepadCommand(*msg);
   }
   is_joy_received_ = true;
+}
+
+void HotdogControllerPlugin::rc_cb(
+  const sensor_msgs::msg::Joy::SharedPtr msg)
+{
+  {
+    std::lock_guard<std::mutex> lock(joy_data_mutex_);
+    // msg_conversion::ConvertToGamepadCommand(msg, gamepad_command_);
+  }
+  is_rc_received_ = true;
 }
 
 void HotdogControllerPlugin::odom_cb()
@@ -524,26 +555,18 @@ void HotdogControllerPlugin::mainLoopThread()
   if (simulation_bridge_) {
     // 处理手柄数据
     GamepadCommand gamepad_command;
+    //key
     {
-
       std::lock_guard<std::mutex> lock(joy_data_mutex_);
-      // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!\n\r");
-
       if (is_joy_received_) {
-        // printf("....................................................................\n\r");
-        gamepad_command.a = joy_data_.buttons[0];
-        gamepad_command.b = joy_data_.buttons[1];
-        gamepad_command.x = joy_data_.buttons[2];
-        gamepad_command.y = joy_data_.buttons[3];
-        gamepad_command.xyz[0] = joy_data_.axes[0];
-        gamepad_command.xyz[1] = joy_data_.axes[1];
-        gamepad_command.xyz[2] = joy_data_.axes[6];
-        gamepad_command.rpy[0] = joy_data_.axes[2];
-        gamepad_command.rpy[1] = joy_data_.axes[3];
-        gamepad_command.rpy[2] = joy_data_.axes[4];
-        gamepad_command.yaw_direction = joy_data_.axes[5];
-        simulation_bridge_->SetGamepadCommand(gamepad_command);
+        simulation_bridge_->SetGamepadCommand(gamepad_command_);
       }
+      if (is_keyboard_received_) {
+        simulation_bridge_->SetKeyboardCommand(keyboard_command_);
+      }
+      is_joy_received_ = false;
+      is_keyboard_received_ = false;
+      is_rc_received_ = false;
     }
 
     simulation_bridge_->SetSpiData(*motor_status);

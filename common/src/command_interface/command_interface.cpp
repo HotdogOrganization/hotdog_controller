@@ -55,10 +55,10 @@ void CommandInterface::ProcessGamepadCommand( const GamepadCommand& gamepad_cmd 
     gamepad_timer_.StartTimer();
 }
 
-// void CommandInterface::ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd ) {
-//     gamepad_cmd_.set( gamepad_cmd );
-//     gamepad_timer_.StartTimer();
-// }
+void CommandInterface::ProcessKeyboardCommand( const KeyboardCommand& keyboard_cmd ) {
+    keyboard_cmd_ = keyboard_cmd;
+    keyboard_timer_.StartTimer();
+}
 
 void CommandInterface::ProcessRcCommand( const RcCommand* rc_cmd ) {
     memcpy( &rc_cmd_, rc_cmd, sizeof( RcCommand ) );
@@ -72,15 +72,7 @@ void CommandInterface::ProcessRcUdpCommand( const RcCommand* rc_udp_cmd ) {
     rc_udp_timer_.StartTimer();
 }
 
-// void CommandInterface::ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd ) {
-//     memcpy( &hotdog_lcm_cmd_, lcm_cmd, sizeof( motion_control_request_lcmt ) );
-//     hotdog_lcm_timer_.StartTimer();
-// }
 
-// void CommandInterface::ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd ) {
-//     memcpy( &lcm_cmd_, lcm_cmd, sizeof( robot_control_cmd_lcmt ) );
-//     lcm_timer_.StartTimer();
-// }
 // void CommandInterface::ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd ) {
 //     memcpy( &motor_ctrl_cmd_, ctrl_cmd, sizeof( motor_ctrl_lcmt ) );
 //     MotorCtrl_mode_flag_ = true;
@@ -134,41 +126,35 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
     static std::map< int, std::string > to_str{
         { kGamepadCmd, "kGamepadCmd" }, { kRcCmd, "kRcCmd" }, { kHotdogLcmCmd, "kHotdogLcmCmd" }, { kHotdog2LcmCmd, "kHotdog2LcmCmd" }, { kMotorCmd, "kMotorCmd" },
     };
-
     int current_mode = 0;
-    // if ( !use_rc ) {
-    //     if ( gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-            current_mode = kGamepadCmd;
-    //     }
-    //     else if ( gamepad_timer_.GetElapsedSeconds() < 2 * CMD_TIMEOUT ) {
-    //         *control_mode = MotionMode::kPureDamper;
-    //         *gait_id      = 0;
-    //         current_mode  = 0;
-    //     }
-    // }
-    // else {  // rc & lcm
-    //     if ( rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT || rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kRcCmd;
-    //     }
-    //     else if ( MotorCtrl_mode_flag_ ) {
-    //         current_mode = kMotorCmd;
-    //     }
-    //     else if ( lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kHotdog2LcmCmd;
-    //     }
-    //     else if ( hotdog_lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kHotdogLcmCmd;
-    //     }
-    //     else {
-    //         // all source timeout, make the dog puredamper
-    //         if ( command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast< int >( MotionMode::kOff ) )
-    //             *control_mode = MotionMode::kPureDamper;
-    //         else
-    //             *control_mode = MotionMode::kOff;
-    //         current_mode = 0;
-    //         *gait_id     = 0;
-    //     }
-    // }
+    // 1. 最高优先级：遥控器
+    if (rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT ||
+        rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT)
+    {
+        current_mode = kRcCmd;
+        // 此时control_mode等参数由RC命令决定，不做强制干预
+    } 
+    // 2. 次级：手柄/gamepad
+    else if (gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT) {
+        current_mode = kGamepadCmd;
+        // 此时control_mode等参数由gamepad命令决定
+    } 
+    // 3. 第3级：键盘
+    else if (keyboard_timer_.GetElapsedSeconds() < CMD_TIMEOUT) {
+        current_mode = kKeyboardCmd;
+        // 此时control_mode等参数由键盘命令决定
+    } 
+    // 4. 全部超时
+    else {
+        // all sources timeout, make the dog pure damper/off
+        if (command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast<int>(MotionMode::kOff)) {
+            *control_mode = MotionMode::kPureDamper;
+        } else {
+            *control_mode = MotionMode::kOff;
+        }
+        current_mode = 0;
+        *gait_id = 0;
+    }
 
     if ( current_mode != last_mode_ ) {
         std::cout << "[CommandInterface::PrepareCmd] ";
@@ -184,6 +170,9 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
     switch ( current_mode ) {
     case kGamepadCmd:
         Gamepad2Cmd( control_mode, gait_id, robotType );
+        break;
+    case kKeyboardCmd:
+        Keyboard2Cmd( control_mode, gait_id, robotType );
         break;
     case kRcCmd:
         Rc2Cmd( robotType );
@@ -506,24 +495,24 @@ void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, c
         cmd_cur_.vel_des[ 0 ] = 0;
         cmd_cur_.vel_des[ 1 ] = 0;
         cmd_cur_.vel_des[ 2 ] = 0;
-        cmd_cur_.rpy_des[ 0 ] = gamepad_cmd_.rpy[0];   // roll
-        cmd_cur_.rpy_des[ 1 ] = gamepad_cmd_.rpy[1];   // pitch
-        cmd_cur_.rpy_des[ 2 ] = gamepad_cmd_.rpy[2];   // yaw
+        cmd_cur_.rpy_des[ 0 ] = - gamepad_cmd_.leftStickAnalog[ 0 ] * 0.6;   // roll
+        cmd_cur_.rpy_des[ 1 ] = gamepad_cmd_.leftStickAnalog[ 1 ] * 0.6;   // pitch
+        cmd_cur_.rpy_des[ 2 ] = gamepad_cmd_.rightStickAnalog[ 0 ] * 0.6;  // yaw
         if ( cmd_cur_.gait_id == 1 || cmd_cur_.gait_id == 3 )
-            cmd_cur_.pos_des[ 2 ] = 0.1 * gamepad_cmd_.rightStickAnalog[ 0 ];
+            cmd_cur_.pos_des[ 2 ] = 0.1 * gamepad_cmd_.rightStickAnalog[ 1 ];
         else
-            cmd_cur_.pos_des[ 2 ] = 0.24 + 0.5 * gamepad_cmd_.xyz[2];
+            cmd_cur_.pos_des[ 2 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 ) + 0.1 * gamepad_cmd_.rightStickAnalog[ 1 ];
         cmd_cur_.contact = 0x0F;
     }
     else if ( cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid ) {
         // x,y, yaw velocity command
-        cmd_cur_.vel_des[ 0 ]     = gamepad_cmd_.xyz[ 0 ];
-        cmd_cur_.vel_des[ 1 ]     = gamepad_cmd_.xyz[ 1 ];
-        cmd_cur_.vel_des[ 2 ]     = gamepad_cmd_.yaw_direction;
+        cmd_cur_.vel_des[ 0 ]     = gamepad_cmd_.leftStickAnalog[ 1 ];
+        cmd_cur_.vel_des[ 1 ]     = gamepad_cmd_.leftStickAnalog[ 0 ];
+        cmd_cur_.vel_des[ 2 ]     = gamepad_cmd_.rightStickAnalog[ 0 ];
         cmd_cur_.rpy_des[ 0 ]     = 0;
         cmd_cur_.rpy_des[ 2 ]     = 0;
         cmd_cur_.rpy_des[ 1 ]     = gamepad_cmd_.rightStickAnalog[ 1 ] * 0.4;
-        cmd_cur_.pos_des[ 2 ]     = 0.24 + gamepad_cmd_.xyz[2];
+        cmd_cur_.pos_des[ 2 ]     = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 );
         cmd_cur_.step_height[ 0 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.04 : 0.06 );
     }
 
@@ -538,6 +527,79 @@ void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, c
     }
     interface_iter_ = 0;
     cmd_list_.push( cmd_cur_ );
+}
+
+void CommandInterface::Keyboard2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType) {
+
+    // Control mode按键判断
+    if (keyboard_cmd_.recoveryStandButton) {
+        *control_mode = MotionMode::kRecoveryStand;
+    }
+    if (keyboard_cmd_.balanceStandButton) {
+        *control_mode = MotionMode::kQpStand;
+    }
+    if (keyboard_cmd_.locomotionButton) {
+        *control_mode = MotionMode::kLocomotion;
+    }
+    if (keyboard_cmd_.pureDumpButton) {
+        *control_mode = MotionMode::kPureDamper;
+    }
+    // 可以根据需要加一个 "Off" 按钮，比如 Esc 或特定键
+    // if (keyboard_cmd_.offButton) *control_mode = MotionMode::kOff;
+
+    // Gait判断（可以指定某些快捷键切gait）
+    // 这里可根据你的需要扩展，比如给不同键映射不同gait
+    // e.g. 按下shift代表快步
+    // if (keyboard_cmd_.fastWalkButton) *gait_id = GaitId::kTrotFast;
+
+    // 默认gait逻辑
+    if (*gait_id == 0 && *control_mode == MotionMode::kLocomotion) {
+        *gait_id = GaitId::kTrot10v5;
+    }
+
+    // 组装最终命令
+    cmd_cur_.mode       = *control_mode;
+    cmd_cur_.gait_id    = *gait_id;
+    cmd_cur_.cmd_source = kKeyboardCmd;
+
+    // 运动/位姿赋值
+    // 注意：如果是键盘，通常只有固定增量或简单的方向（比如WSAD控制）——此处简单映射
+    // 假设xVel、yVel、yawVel和roll/pitch/yawPos、heightPos在上层有处理、赋值
+    if (cmd_cur_.mode == MotionMode::kQpStand) {
+        // 姿态指令
+        cmd_cur_.vel_des[0] = 0;
+        cmd_cur_.vel_des[1] = 0;
+        cmd_cur_.vel_des[2] = 0;
+        cmd_cur_.rpy_des[0] = keyboard_cmd_.rollPos;
+        cmd_cur_.rpy_des[1] = keyboard_cmd_.pitchPos;
+        cmd_cur_.rpy_des[2] = keyboard_cmd_.yawPos;
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.24 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.contact = 0x0F;
+    }
+    else if (cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid) {
+        // 通常键盘的速度设置为步进或者离散值
+        cmd_cur_.vel_des[0] = keyboard_cmd_.xVel;
+        cmd_cur_.vel_des[1] = keyboard_cmd_.yVel;
+        cmd_cur_.vel_des[2] = keyboard_cmd_.yawVel;
+        cmd_cur_.rpy_des[0] = 0;
+        cmd_cur_.rpy_des[1] = 0;
+        cmd_cur_.rpy_des[2] = 0;
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.24 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.step_height[0] = (robotType == RobotType::CYBERDOG2 ? 0.04 : 0.06);
+    }
+
+    // 清除命令队列逻辑
+    if (cmd_cur_.duration == 0) {
+        if (cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0) {
+            return;
+        }
+        else {
+            while(!cmd_list_.empty())
+                cmd_list_.pop();
+        }
+    }
+    interface_iter_ = 0;
+    cmd_list_.push(cmd_cur_);
 }
 
 void CommandInterface::Rc2Cmd( const RobotType& robotType ) {

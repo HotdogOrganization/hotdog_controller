@@ -24,12 +24,6 @@ namespace hotdog_locomotion
  */
 class SimulationBridge {
 public:
-  struct JoyData
-  {
-    std::vector<float> axes;
-    std::vector<int32_t> buttons;
-  };
-
   explicit SimulationBridge(RobotType robot_type, RobotController* robot_ctrl);
   ~SimulationBridge();
 
@@ -46,7 +40,10 @@ public:
     vector_nav_data_ = vector_nav_data;
   }
   void SetGamepadCommand(const GamepadCommand& gamepad_command) {
-    gamepad_command_ = gamepad_command;
+    gamepad_command_ = std::make_shared<GamepadCommand>(gamepad_command);
+  }
+  void SetKeyboardCommand(const KeyboardCommand& keyboard_command) {
+    keyboard_command_ = std::make_shared<KeyboardCommand>(keyboard_command);
   }
 
   const SpiData& GetSpiData() const {
@@ -59,7 +56,16 @@ public:
     return vector_nav_data_;
   }
   const GamepadCommand& GetGamepadCommand() const {
-    return gamepad_command_;
+    if (!gamepad_command_) {
+      throw std::runtime_error("Gamepad command is not set");
+    }
+    return *gamepad_command_;
+  }
+  const KeyboardCommand& GetKeyboardCommand() const {
+    if (!keyboard_command_) {
+      throw std::runtime_error("Keyboard command is not set");
+    }
+    return *keyboard_command_;
   }
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
@@ -71,6 +77,7 @@ public:
 private:
   bool LoadControlParametersFromFiles();
   bool InitRobotRunner();
+  void ClearCommands();
 
 private:
   RobotType                  robot_type_;
@@ -88,9 +95,11 @@ private:
   SpiData                         spi_data_;
   SpiCommand                      spi_command_;
   VectorNavData                   vector_nav_data_;
-  GamepadCommand                  gamepad_command_;
   VisualizationData               visualization_data_;
   StateEstimateData               state_estimate_data_;
+
+  std::shared_ptr<GamepadCommand>  gamepad_command_ = nullptr;
+  std::shared_ptr<KeyboardCommand> keyboard_command_ = nullptr;
   // ComplementaryFilter imu_filter_;
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;

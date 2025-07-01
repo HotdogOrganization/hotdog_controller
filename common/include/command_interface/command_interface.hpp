@@ -18,6 +18,7 @@
 #include "dynamics/quadruped.hpp"
 #include "utilities/timer.hpp"
 #include "command_interface/gamepad_command.hpp"
+#include "command_interface/keyboard_command.hpp"
 #include "command_interface/rc_command.hpp"
 // #include "header/lcm_type/file_recv_lcmt.hpp"
 // #include "header/lcm_type/file_send_lcmt.hpp"
@@ -66,10 +67,11 @@ struct MotionControlCommand {
 
 typedef enum {
     kGamepadCmd      = 7,
-    kRcCmd           = 8,
-    kHotdogLcmCmd  = 9,
-    kHotdog2LcmCmd = 10,
-    kMotorCmd        = 11,
+    kKeyboardCmd      = 8,
+    kRcCmd           = 9,
+    kHotdogLcmCmd  = 10,
+    kHotdog2LcmCmd = 11,
+    kMotorCmd        = 12,
 } CmdSource;
 
 /**
@@ -101,7 +103,7 @@ public:
     
      // Command Process function group, work in bridge layer
     void ProcessGamepadCommand( const GamepadCommand& gamepad_cmd );
-    // void ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd );
+    void ProcessKeyboardCommand( const KeyboardCommand& gamepad_cmd );
     void ProcessRcCommand( const RcCommand* rc_cmd );
     void ProcessRcUdpCommand( const RcCommand* rc_cmd );
     // void ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd );
@@ -115,6 +117,7 @@ public:
 
 private:
     void Gamepad2Cmd( long int* control_mode, long int* gait_id, const RobotType& robotType );
+    void Keyboard2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType);
     void Rc2Cmd( const RobotType& robotType );
     // void MotorLcm2Cmd();
     // void Lcm2Cmd();
@@ -157,6 +160,9 @@ private:
     int16_t                     motion_list_size_;
     std::string                 user_gait_file_;
     std::string                 user_gait_list_file_;
+
+    KeyboardCommand keyboard_cmd_;
+    Timer           keyboard_timer_;
     // motion_control_request_lcmt hotdog_lcm_cmd_;
     // robot_control_cmd_lcmt      lcm_cmd_;
     // motor_ctrl_lcmt             motor_ctrl_cmd_;
