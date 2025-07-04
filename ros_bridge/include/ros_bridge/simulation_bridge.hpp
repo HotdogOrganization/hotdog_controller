@@ -39,6 +39,9 @@ public:
   void SetVectorNavData(const VectorNavData& vector_nav_data) {
     vector_nav_data_ = vector_nav_data;
   }
+  void SetRcCommand(const RcCommand& rc_command) {
+    rc_command_ = std::make_shared<RcCommand>(rc_command);
+  }
   void SetGamepadCommand(const GamepadCommand& gamepad_command) {
     gamepad_command_ = std::make_shared<GamepadCommand>(gamepad_command);
   }
@@ -100,6 +103,7 @@ private:
 
   std::shared_ptr<GamepadCommand>  gamepad_command_ = nullptr;
   std::shared_ptr<KeyboardCommand> keyboard_command_ = nullptr;
+  std::shared_ptr<RcCommand> rc_command_ = nullptr;
   // ComplementaryFilter imu_filter_;
   // MahonyFilter        imu_mh_filter_;
   // Cyberdog2Visualization          hotdog2_visualization_;

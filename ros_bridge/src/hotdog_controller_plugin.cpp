@@ -377,7 +377,7 @@ void HotdogControllerPlugin::rc_cb(
 {
   {
     std::lock_guard<std::mutex> lock(joy_data_mutex_);
-    // msg_conversion::ConvertToGamepadCommand(msg, gamepad_command_);
+    rc_command_ = msg_conversion::ConvertToRcCommand(*msg);
   }
   is_rc_received_ = true;
 }
@@ -558,6 +558,9 @@ void HotdogControllerPlugin::mainLoopThread()
     //key
     {
       std::lock_guard<std::mutex> lock(joy_data_mutex_);
+      if (is_rc_received_) {
+        simulation_bridge_->SetRcCommand(rc_command_);
+      }
       if (is_joy_received_) {
         simulation_bridge_->SetGamepadCommand(gamepad_command_);
       }

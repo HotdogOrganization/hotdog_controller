@@ -84,6 +84,25 @@ static inline GamepadCommand ConvertToGamepadCommand(const sensor_msgs::msg::Joy
 }
 
 
+static inline RcCommand ConvertToRcCommand(const sensor_msgs::msg::Joy& joy_msg)
+{
+  RcCommand rc_command;
+  rc_command.L1 = joy_msg.buttons[0] > 0;  // L1
+  rc_command.L2 = joy_msg.buttons[1] > 0;  // L2
+  rc_command.R1 = joy_msg.buttons[2] > 0;  // R1
+  rc_command.R2 = joy_msg.buttons[3] > 0;  // R2
+  rc_command.B1 = joy_msg.buttons[4] > 0;  // B1
+  rc_command.B2 = joy_msg.buttons[5] > 0;  // B2
+  rc_command.wheelAnalog = joy_msg.axes[4];  // Wheel analog
+  rc_command.leftStickAnalog[0] = joy_msg.axes[3];
+  rc_command.leftStickAnalog[1] = joy_msg.axes[2];
+  rc_command.rightStickAnalog[0] = joy_msg.axes[0]; // 0是左右
+  rc_command.rightStickAnalog[1] = joy_msg.axes[1]; // 1是上下
+  // std::cout << "Rc Command: " << rc_command.ToString() << std::endl;
+
+  return rc_command;
+}
+
 static inline VectorNavData ConvertToVectorNavData(const float* quat, const float* gyro, const float* accl)
 {
   VectorNavData vector_nav_data;

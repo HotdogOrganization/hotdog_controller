@@ -104,7 +104,7 @@ public:
      // Command Process function group, work in bridge layer
     void ProcessGamepadCommand( const GamepadCommand& gamepad_cmd );
     void ProcessKeyboardCommand( const KeyboardCommand& gamepad_cmd );
-    void ProcessRcCommand( const RcCommand* rc_cmd );
+    void ProcessRcCommand( const RcCommand& rc_cmd );
     void ProcessRcUdpCommand( const RcCommand* rc_cmd );
     // void ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd );
     // void ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd );
@@ -116,9 +116,10 @@ public:
     }
 
 private:
-    void Gamepad2Cmd( long int* control_mode, long int* gait_id, const RobotType& robotType );
+    void Gamepad2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType);
     void Keyboard2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType);
-    void Rc2Cmd( const RobotType& robotType );
+    void Rc2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType);
+
     // void MotorLcm2Cmd();
     // void Lcm2Cmd();
     // void HotdogLcm2Cmd();

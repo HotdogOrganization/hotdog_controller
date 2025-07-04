@@ -119,6 +119,7 @@ void SimulationBridge::ClearCommands()
 {
   gamepad_command_.reset();
   keyboard_command_.reset();
+  rc_command_.reset();
 }
 
 
@@ -173,7 +174,9 @@ void SimulationBridge::RunRobotControl()
     first_controller_run_ = false;
   }
 
-  if (gamepad_command_) {
+  if (rc_command_) {
+    cmd_interface_.ProcessRcCommand(*rc_command_);
+  } else if (gamepad_command_) {
     cmd_interface_.ProcessGamepadCommand(*gamepad_command_);
   } else if (keyboard_command_) {
     cmd_interface_.ProcessKeyboardCommand(*keyboard_command_);

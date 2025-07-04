@@ -1,42 +1,57 @@
 #ifndef RC_COMMAND_HPP_
 #define RC_COMMAND_HPP_
 
-enum AT9s_SwitchStateBool {
-    AT9S_BOOL_UP   = 0,
-    AT9S_BOOL_DOWN = 1,
-};
-
-enum AT9s_SwitchStateTri {
-    AT9S_TRI_UP     = 0,
-    AT9S_TRI_MIDDLE = 1,
-    AT9S_TRI_DOWN   = 2,
-};
-
-enum T8S_SwitchStateTri {
-    T8S_TRI_UP     = 0,
-    T8S_TRI_MIDDLE = 1,
-    T8S_TRI_DOWN   = 2,
-};
-
-enum T8S_SwitchStateBool {
-    T8S_BOOL_UP   = 0,
-    T8S_BOOL_DOWN = 1,
-};
+#include "utilities/utilities.hpp"
+#include "cpp_types.hpp"
 
 /**
- * @brief Remote Control Command interface, currently use AT9S
+ * @brief The state of the gamepad
+ * 
  */
-class RcCommand {
-public:
-    AT9s_SwitchStateBool SWF, SWA, SWB, SWD;
-    AT9s_SwitchStateTri  SWE, SWC, SWG;
-    T8S_SwitchStateTri   CH7, CH5;
-    T8S_SwitchStateBool  CH6;
-    float                left_stick_x, left_stick_y;
-    float                right_stick_x, right_stick_y;
-    float                varB;
-    int                  rc_type;
-    int                  err_count;
+struct RcCommand {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    /**
+     * @brief Construct a gamepad and set to zero.
+     * 
+     */
+    RcCommand() {
+        zero();
+    }
+
+    Vec2< float > leftStickAnalog, rightStickAnalog;
+    float wheelAnalog;
+    bool L1, L2, R1, R2, B1, B2;
+
+
+    /**
+     * @brief Set all values to zero
+     * 
+     */
+    void zero() {
+        leftStickAnalog.setZero();
+        rightStickAnalog.setZero();
+        wheelAnalog = 0.0f;
+        L1 = L2 = R1 = R2 = B1 = B2 = false;
+    }
+
+    /**
+     * @brief Represent as human-readable string.
+     * @return string representing state
+     */
+    std::string ToString() {
+        std::string result = "RcCommand State:\n";
+        result += "leftStickAnalog: " + EigenToString(leftStickAnalog) + "\n";
+        result += "rightStickAnalog: " + EigenToString(rightStickAnalog) + "\n";
+        result += "wheelAnalog: " + std::to_string(wheelAnalog) + "\n";
+        result += "L1: " + BoolToString(L1) + "\n";
+        result += "L2: " + BoolToString(L2) + "\n";
+        result += "R1: " + BoolToString(R1) + "\n";
+        result += "R2: " + BoolToString(R2) + "\n";
+        result += "B1: " + BoolToString(B1) + "\n";
+        result += "B2: " + BoolToString(B2) + "\n";
+        return result;
+    }
 };
 
 #endif  // RC_COMMAND_HPP_

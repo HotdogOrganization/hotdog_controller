@@ -3,7 +3,6 @@
 
 #include "utilities/utilities.hpp"
 #include "cpp_types.hpp"
-// #include "header/lcm_type/gamepad_lcmt.hpp"
 
 /**
  * @brief The state of the gamepad
