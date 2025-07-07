@@ -53,27 +53,27 @@ template < typename T > void VectorNavOrientationEstimator< T >::Run() {
 
     this->state_estimator_data_.result->rpy = ori::QuatToRPY( this->state_estimator_data_.result->orientation );
 // ====== 只清理一次 ======
-static bool clear_flag = true;
-if (clear_flag)
-{
-    std::ofstream clear_fout("quaternion_log.txt", std::ios::trunc); // trunc清空文件
-    clear_fout.close();
-    clear_flag = false;
-}
+// static bool clear_flag = true;
+// if (clear_flag)
+// {
+//     std::ofstream clear_fout("quaternion_log.txt", std::ios::trunc); // trunc清空文件
+//     clear_fout.close();
+//     clear_flag = false;
+// }
 
-// ====== 后续正常追加写入 ======
-std::ofstream fout("quaternion_log.txt", std::ios::app); // 追加模式
-if (fout.is_open()) {
-    auto& q = this->state_estimator_data_.result->orientation;
-    auto& rpy = this->state_estimator_data_.result->rpy; // roll, pitch, yaw
-    // 假设四元数顺序为 [w, x, y, z]
-    // 假设欧拉角单位为弧度
-    fout << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << " "
-         << rpy[0] << " " << rpy[1] << " " << rpy[2] << std::endl;
-    fout.close();
-} else {
-    std::cerr << "无法打开quaternion_log.txt文件!" << std::endl;
-}
+// // ====== 后续正常追加写入 ======
+// std::ofstream fout("quaternion_log.txt", std::ios::app); // 追加模式
+// if (fout.is_open()) {
+//     auto& q = this->state_estimator_data_.result->orientation;
+//     auto& rpy = this->state_estimator_data_.result->rpy; // roll, pitch, yaw
+//     // 假设四元数顺序为 [w, x, y, z]
+//     // 假设欧拉角单位为弧度
+//     fout << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << " "
+//          << rpy[0] << " " << rpy[1] << " " << rpy[2] << std::endl;
+//     fout.close();
+// } else {
+//     std::cerr << "无法打开quaternion_log.txt文件!" << std::endl;
+// }
 
 
 
