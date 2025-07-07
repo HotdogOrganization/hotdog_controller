@@ -27,7 +27,10 @@ template < typename T > FSMStateRecoveryStand< T >::FSMStateRecoveryStand( Contr
     // goal configuration
     // Folding
     for ( size_t i( 0 ); i < 4; ++i )
+        if ( this->data_->quadruped->robot_type_ == RobotType::CYBERDOG2 )
             fold_jpos[ i ] << -0.0f, -1.38f, 2.5f;
+        else
+            fold_jpos[ i ] << -0.0f, -1.4f, 2.4f;
 
     T L1           = this->data_->quadruped->hip_link_length_;
     T L2           = this->data_->quadruped->knee_link_length_;
@@ -621,8 +624,8 @@ template < typename T > void FSMStateRecoveryStand< T >::StandUp( const int& cur
         if ( curr_iter > standup_ramp_iter_ + stand_waitstable_ ) {
             if ( !this->ready_for_switch_ )
                 std::cout << "INFO: [RecoveryStand] Stand finish! first_stand_=" << static_cast<int>(first_stand_)
-                        << " liedown_ok_=" << static_cast<int>(liedown_ok_)
-                        << " gait_id=" << this->data_->command->gait_id
+                << " liedown_ok_=" << static_cast<int>(liedown_ok_)
+                << " gait_id=" << this->data_->command->gait_id
                         << " LieDown_flag_=" << static_cast<int>(LieDown_flag_) << std::endl;
             this->ready_for_switch_ = true;
             for ( size_t i( 0 ); i < 4; ++i ) {
@@ -772,13 +775,11 @@ template < typename T > void FSMStateRecoveryStand< T >::FoldLegs( const int& cu
                     max_diff = diff;
             }
         if ( max_diff < 30 / 57.3 )
-            fold_ramp_iter_ = 1000;
+            fold_ramp_iter_ = 501;
         else if ( max_diff < 100 / 57.3 )
-            fold_ramp_iter_ = 2000;
+            fold_ramp_iter_ = 801;
         else if ( max_diff < 180 / 57.3 )
-            fold_ramp_iter_ = 3000;
-        else if ( max_diff < 360 / 57.3 )
-            fold_ramp_iter_ = 3000;
+            fold_ramp_iter_ = 999;
     }
 
     for ( int i( 0 ); i < 4; ++i ) {
@@ -1201,12 +1202,13 @@ template < typename T > void FSMStateRecoveryStand< T >::JointPdControl( int leg
 
     if ( this->data_->quadruped->robot_type_ == RobotType::CYBERDOG2 ) {
         leg_ctrl->commands_[ leg ].kp_joint << 100, 0, 0, 0, 100, 0, 0, 0, 100;
-        leg_ctrl->commands_[ leg ].kd_joint << 2.5, 0, 0, 0, 2.5, 0, 0, 0, 2.5;
+        leg_ctrl->commands_[ leg ].kd_joint << 4, 0, 0, 0, 4, 0, 0, 0, 4;
+        // leg_ctrl->commands_[ leg ].kp_joint << 240, 0, 0, 0, 240, 0, 0, 0, 180;
+        // leg_ctrl->commands_[ leg ].kd_joint << 7.5, 0, 0, 0, 6, 0, 0, 0, 4.5;
+        // leg_ctrl->commands_[ leg ].kp_joint << 240, 0, 0, 0, 240, 0, 0, 0, 180;
+        // leg_ctrl->commands_[ leg ].kd_joint << 6, 0, 0, 0, 6, 0, 0, 0, 6;
     }
-    else {
-        leg_ctrl->commands_[ leg ].kp_joint << 100, 0, 0, 0, 100, 0, 0, 0, 120;
-        leg_ctrl->commands_[ leg ].kd_joint << 2, 0, 0, 0, 2, 0, 0, 0, 2;
-    }
+
     soft_limimt_ = 0;
     SoftLimitation( qDes( 0 ), leg_ctrl->q_abad_lowerbound_ + 0.05, leg_ctrl->q_abad_upperbound_ - 0.05 );
     if ( soft_limimt_ == 1 )
