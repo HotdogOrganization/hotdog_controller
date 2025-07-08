@@ -111,10 +111,10 @@ protected:
   
   //接收函数
   void imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg);
-  void joint_states_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg);
+  void motor_status_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg);
 
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_subscription_;
-  rclcpp::Subscription<sopu_msgs::msg::MotorStatus>::SharedPtr joint_states_subscription_;
+  rclcpp::Subscription<sopu_msgs::msg::MotorStatus>::SharedPtr motor_status_subscription_;
 
 
   void odom_cb();
@@ -176,23 +176,18 @@ protected: // TODO:
   std::mutex joy_data_mutex_;
   bool is_joy_received_ = false;
 
+  bool sim_mode_ = false; // 是否为仿真模式
 
 private:
-    // 用于存储最新IMU消息
-    sensor_msgs::msg::Imu latest_imu_msg_;
-    // 用于线程安全
-    std::mutex imu_mutex_;
-    // 标志是否收到过IMU消息
-    bool imu_received_ = false;
+  // 用于存储最新IMU消息
+  sensor_msgs::msg::Imu::SharedPtr latest_imu_msg_ = nullptr;
+  // 用于线程安全
+  std::mutex imu_mutex_;
+  // 标志是否收到过IMU消息
 
-    // 你也可以把 motor_status 相关的成员变量一并加上
-    sopu_msgs::msg::MotorStatus latest_motor_status_msg_;
-    std::mutex motor_mutex_;
-    bool motor_status_received_ = false;
-
-
-
-
+  // 你也可以把 motor_status 相关的成员变量一并加上
+  sopu_msgs::msg::MotorStatus::SharedPtr latest_motor_status_msg_ = nullptr;
+  std::mutex motor_mutex_;
 };
 
 // class CheaterHotdogControllerPlugin : public HotdogControllerPlugin

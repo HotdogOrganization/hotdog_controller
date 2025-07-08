@@ -91,6 +91,9 @@ def generate_launch_description():
         package="controller_manager",
         # output='screen',
         executable="spawner",
+        parameters=[
+            {"sim_mode" : False},
+        ],
         arguments=[
             "hotdog_controller",
             "--controller-manager",
@@ -145,7 +148,7 @@ def generate_launch_description():
         # start_controller,
         tita_controller_spawner,
         command_launch,
-        hw_broadcaster
+        # hw_broadcaster
     ]
 
     return LaunchDescription(nodes)
