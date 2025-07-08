@@ -31,6 +31,7 @@ public:
     void SetVectorNavData( VectorNavData* value );
     void SetRobotControlParameters( RobotControlParameters* value );
     void SetVisualizationData( VisualizationData* value );
+    void SetWbcTestData( WbcTestData* value );
     void SetHotdog2Visualization( Hotdog2Visualization* value );
     void SetCheaterState( CheaterState< double >* value );
     void SetBmsStatus( int8_t* value );

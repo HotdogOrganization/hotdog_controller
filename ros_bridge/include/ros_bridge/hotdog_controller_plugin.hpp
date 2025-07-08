@@ -59,6 +59,7 @@
 
 #include "sopu_msgs/msg/motor_status.hpp"
 #include "sopu_msgs/msg/motor_command.hpp"
+#include "sopu_msgs/msg/wbc_test_data.hpp"
 
 // #include "task/Task.hpp"
 namespace hotdog_locomotion
@@ -128,12 +129,15 @@ protected:
   rclcpp::TimerBase::SharedPtr odom_timer_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster_;
   
-  rclcpp::Publisher<sopu_msgs::msg::MotorStatus>::SharedPtr motor_status_publisher_;
+  rclcpp::Publisher<sopu_msgs::msg::MotorStatus>::SharedPtr fake_motor_status_publisher_;
   rclcpp::Publisher<sopu_msgs::msg::MotorCommand>::SharedPtr motor_command_publisher_;
+  rclcpp::Publisher<sopu_msgs::msg::WbcTestData>::SharedPtr wbc_test_data_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr vis_marker_publisher_;  
+  rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_publisher_;
 
   void publish_motor_status(const SpiData & spi_data);
   void publish_motor_command(const SpiCommand & spi_command);
+  void publish_wbc_test_data(const WbcTestData & wbc_test_data);
 
 protected:
   std::vector<std::shared_ptr<Joint>> joints_;

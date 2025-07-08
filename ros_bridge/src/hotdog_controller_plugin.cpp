@@ -81,6 +81,7 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       tita_topic::manager_hotdog_joy, rclcpp::SensorDataQoS().reliable(),
       std::bind(&HotdogControllerPlugin::joy_cb, this, std::placeholders::_1));
 
+  // TODO： RC消息的topic需要完善
   rc_subscription_ =
     get_node()->create_subscription<sensor_msgs::msg::Joy>(
       tita_topic::manager_hotdog_rc, rclcpp::SensorDataQoS().reliable(),
@@ -96,9 +97,13 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
       
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", rclcpp::SensorDataQoS().reliable());
   
-  // motor_status_publisher_
-  //   = get_node()->create_publisher<sopu_msgs::msg::MotorStatus>(
-  //     "motor_status", rclcpp::SensorDataQoS().reliable());
+  fake_motor_status_publisher_
+    = get_node()->create_publisher<sopu_msgs::msg::MotorStatus>(
+      "fake_motor_status", rclcpp::SensorDataQoS().reliable());
+
+  wbc_test_data_publisher_
+    = get_node()->create_publisher<sopu_msgs::msg::WbcTestData>(
+      "wbc_test_data", rclcpp::SensorDataQoS().reliable());
 
   motor_command_publisher_ =
     get_node()->create_publisher<sopu_msgs::msg::MotorCommand>(
@@ -442,6 +447,15 @@ void HotdogControllerPlugin::odom_cb()
   odom_msg.twist.covariance = {};
   odom_publisher_->publish(odom_msg);
 }
+// void publish_wbc_test_data(const WbcTestData & wbc_test_data);
+void HotdogControllerPlugin::publish_wbc_test_data(const WbcTestData & wbc_test_data)
+{
+  sopu_msgs::msg::WbcTestData wbc_test_data_msg =
+              msg_conversion::ConvertToWbcTestDataMsg(wbc_test_data);
+  wbc_test_data_msg.header.stamp = rclcpp::Clock().now();
+
+  wbc_test_data_publisher_->publish(wbc_test_data_msg);
+}
 
 void HotdogControllerPlugin::publish_motor_status(const SpiData & spi_data)
 {
@@ -449,7 +463,7 @@ void HotdogControllerPlugin::publish_motor_status(const SpiData & spi_data)
               msg_conversion::ConvertToMotorStatusMsg(spi_data);
   motor_status_msg.header.stamp = rclcpp::Clock().now();
 
-  motor_status_publisher_->publish(motor_status_msg);
+  fake_motor_status_publisher_->publish(motor_status_msg);
 }
 
 void HotdogControllerPlugin::publish_motor_command(const SpiCommand & spi_command)
@@ -577,8 +591,8 @@ void HotdogControllerPlugin::mainLoopThread()
     // double roll, pitch, yaw;
     // tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
     simulation_bridge_->Run();
-    
-    const auto spi_command = simulation_bridge_->GetSpiCommand();
+    const auto& spi_command = simulation_bridge_->GetSpiCommand();
+    const auto& wbc_test_data = simulation_bridge_->GetWbcTestData();
 
     static int vis_pub_count = 0;
     if (vis_pub_count % 50 == 0) {
@@ -639,10 +653,11 @@ void HotdogControllerPlugin::mainLoopThread()
                         + spi_command.kd_knee[i] * (0 - (-motor_vel_[i*3+2]))
                         + spi_command.tau_knee_ff[i];
         }
+        publish_motor_status(*motor_status);
       }
       publish_motor_command(spi_command);
     }
-
+    publish_wbc_test_data(wbc_test_data);
   }
 
 

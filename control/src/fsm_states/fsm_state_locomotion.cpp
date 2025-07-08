@@ -391,9 +391,10 @@ template < typename T > void FsmStateLocomotion< T >::LocomotionControlStep() {
                 weight_vec_[ i ] = convex_mpc_loco_gaits_->floating_base_weight_wbc_[ i ];
             wbc_ctrl_->SetFloatingBaseWeight( weight_vec_ );
             wbc_ctrl_->SetFriction( convex_mpc_loco_gaits_->mu_for_wbc_ );
-            wbc_ctrl_->SetTaskPD( convex_mpc_loco_gaits_->kp_body_for_wbc_, convex_mpc_loco_gaits_->kd_body_for_wbc_, convex_mpc_loco_gaits_->kp_ori_for_wbc_, convex_mpc_loco_gaits_->kd_ori_for_wbc_,
-                                  convex_mpc_loco_gaits_->kp_foot_for_wbc_, convex_mpc_loco_gaits_->kd_foot_for_wbc_, convex_mpc_loco_gaits_->kp_joint_for_wbc_,
-                                  convex_mpc_loco_gaits_->kd_joint_for_wbc_ );
+            wbc_ctrl_->SetTaskPD( convex_mpc_loco_gaits_->kp_body_for_wbc_, convex_mpc_loco_gaits_->kd_body_for_wbc_,
+                                  convex_mpc_loco_gaits_->kp_ori_for_wbc_, convex_mpc_loco_gaits_->kd_ori_for_wbc_,
+                                  convex_mpc_loco_gaits_->kp_foot_for_wbc_, convex_mpc_loco_gaits_->kd_foot_for_wbc_,
+                                  convex_mpc_loco_gaits_->kp_joint_for_wbc_, convex_mpc_loco_gaits_->kd_joint_for_wbc_ );
 
             for ( int leg( 0 ); leg < 4; ++leg ) {
                 leg_pos_des_backup[ leg ] = this->data_->leg_controller->commands_[ leg ].p_des;

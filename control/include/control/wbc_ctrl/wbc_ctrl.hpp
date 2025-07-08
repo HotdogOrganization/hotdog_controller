@@ -1,57 +1,15 @@
 #ifndef WBC_CTRL_HPP_
 #define WBC_CTRL_HPP_
 
-// #include <lcm/lcm-cpp.hpp>
-
 #include "cpp_types.hpp"
+#include "sim_utilities/wbc_test_data.hpp"
 #include "dynamics/floating_base_model.hpp"
 #include "dynamics/quadruped.hpp"
 #include "fsm_states/control_fsm_data.hpp"
-// #include "header/lcm_type/wbc_test_data_t.hpp"
 #include "wbc/wbic/kin_wbc.hpp"
 #include "wbc/wbic/wbic.hpp"
 
 #define WBCtrl WbcCtrl< T >
-
-
-struct wbc_test_data_t 
-{
-    int32_t contact_est[4];
-
-    float Fr_des[12];
-    float Fr[12];
-
-    float body_ori_cmd[4];
-    float body_pos_cmd[3];
-    float body_vel_cmd[3];
-    float body_ang_vel_cmd[3];
-
-    float body_pos[3];
-    float body_vel[3];
-
-    float body_ori[4];
-    float body_ang_vel[3];
-
-    float foot_pos_cmd[12];
-    float foot_vel_cmd[12];
-    float foot_acc_cmd[12];
-    float foot_acc_numeric[12];
-    
-    float foot_pos[12];
-    float foot_vel[12];
-
-    float foot_local_pos[12];
-    float foot_local_vel[12];
-
-    float jpos_cmd[12];
-    float jvel_cmd[12];
-    float jacc_cmd[12];
-
-    float jpos[12];
-    float jvel[12];
-
-    float vision_loc[3];
-};
 
 
 class UserParameters;
@@ -90,7 +48,7 @@ protected:
         ( void )input;
         ( void )data;
     }
-    virtual void LcmPublishData( ControlFsmData< T >& data ) {
+    virtual void UpdateWbcData( ControlFsmData< T >& data ) {
         ( void )data;
     }
     void UpdateModel( const StateEstimatorResult< T >& state_est, const LegControllerData< T >* leg_data, const bool& use_absolute_dom = false );
@@ -120,8 +78,5 @@ protected:
     std::vector< T > kp_joint_, kd_joint_;
 
     unsigned long long iter_;
-
-    // lcm::LCM        wbc_lcm_;
-    wbc_test_data_t wbc_data_lcm_;
 };
 #endif  // WBC_CTRL_HPP_

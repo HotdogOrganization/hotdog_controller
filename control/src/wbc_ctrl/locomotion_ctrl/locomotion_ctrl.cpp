@@ -185,7 +185,11 @@ template < typename T > void LocomotionCtrl< T >::CleanUp() {
     WBCtrl::task_list_.clear();
 }
 
-template < typename T > void LocomotionCtrl< T >::LcmPublishData( ControlFsmData< T >& data ) {
+template < typename T > void LocomotionCtrl< T >::UpdateWbcData( ControlFsmData< T >& data ) {
+    if (data.wbc_test_data == nullptr) {
+        throw std::runtime_error( "WBC test data is not initialized!" );
+    }
+
     int iter( 0 );
     for ( size_t leg( 0 ); leg < 4; ++leg ) {
         reaction_force_result_[ leg ].setZero();
@@ -198,60 +202,60 @@ template < typename T > void LocomotionCtrl< T >::LcmPublishData( ControlFsmData
         }
 
         if ( input_data_->contact_state[ leg ] > 0. ) {  // Contact
-            WBCtrl::wbc_data_lcm_.contact_est[ leg ] = 1;
+            data.wbc_test_data->contact_est[ leg ] = 1;
         }
         else {
-            WBCtrl::wbc_data_lcm_.contact_est[ leg ] = 0;
+            data.wbc_test_data->contact_est[ leg ] = 0;
         }
     }
 
     for ( size_t i( 0 ); i < 3; ++i ) {
-        WBCtrl::wbc_data_lcm_.foot_pos[ i ] = WBCtrl::model_.pGC_[ linkID::kFr ][ i ];
-        WBCtrl::wbc_data_lcm_.foot_vel[ i ] = WBCtrl::model_.vGC_[ linkID::kFr ][ i ];
+        data.wbc_test_data->foot_pos[ i ] = WBCtrl::model_.pGC_[ linkID::kFr ][ i ];
+        data.wbc_test_data->foot_vel[ i ] = WBCtrl::model_.vGC_[ linkID::kFr ][ i ];
 
-        WBCtrl::wbc_data_lcm_.foot_pos[ i + 3 ] = WBCtrl::model_.pGC_[ linkID::kFl ][ i ];
-        WBCtrl::wbc_data_lcm_.foot_vel[ i + 3 ] = WBCtrl::model_.vGC_[ linkID::kFl ][ i ];
+        data.wbc_test_data->foot_pos[ i + 3 ] = WBCtrl::model_.pGC_[ linkID::kFl ][ i ];
+        data.wbc_test_data->foot_vel[ i + 3 ] = WBCtrl::model_.vGC_[ linkID::kFl ][ i ];
 
-        WBCtrl::wbc_data_lcm_.foot_pos[ i + 6 ] = WBCtrl::model_.pGC_[ linkID::kHr ][ i ];
-        WBCtrl::wbc_data_lcm_.foot_vel[ i + 6 ] = WBCtrl::model_.vGC_[ linkID::kHr ][ i ];
+        data.wbc_test_data->foot_pos[ i + 6 ] = WBCtrl::model_.pGC_[ linkID::kHr ][ i ];
+        data.wbc_test_data->foot_vel[ i + 6 ] = WBCtrl::model_.vGC_[ linkID::kHr ][ i ];
 
-        WBCtrl::wbc_data_lcm_.foot_pos[ i + 9 ] = WBCtrl::model_.pGC_[ linkID::kHl ][ i ];
-        WBCtrl::wbc_data_lcm_.foot_vel[ i + 9 ] = WBCtrl::model_.vGC_[ linkID::kHl ][ i ];
+        data.wbc_test_data->foot_pos[ i + 9 ] = WBCtrl::model_.pGC_[ linkID::kHl ][ i ];
+        data.wbc_test_data->foot_vel[ i + 9 ] = WBCtrl::model_.vGC_[ linkID::kHl ][ i ];
 
         for ( size_t leg( 0 ); leg < 4; ++leg ) {
-            WBCtrl::wbc_data_lcm_.Fr_des[ 3 * leg + i ] = input_data_->reaction_force_des[ leg ][ i ];
-            WBCtrl::wbc_data_lcm_.Fr[ 3 * leg + i ]     = reaction_force_result_[ leg ][ i ];
+            data.wbc_test_data->Fr_des[ 3 * leg + i ] = input_data_->reaction_force_des[ leg ][ i ];
+            data.wbc_test_data->Fr[ 3 * leg + i ]     = reaction_force_result_[ leg ][ i ];
 
-            WBCtrl::wbc_data_lcm_.foot_pos_cmd[ 3 * leg + i ] = input_data_->foot_pos_des[ leg ][ i ];
-            WBCtrl::wbc_data_lcm_.foot_vel_cmd[ 3 * leg + i ] = input_data_->foot_vel_des[ leg ][ i ];
-            WBCtrl::wbc_data_lcm_.foot_acc_cmd[ 3 * leg + i ] = input_data_->foot_acc_des[ leg ][ i ];
+            data.wbc_test_data->foot_pos_cmd[ 3 * leg + i ] = input_data_->foot_pos_des[ leg ][ i ];
+            data.wbc_test_data->foot_vel_cmd[ 3 * leg + i ] = input_data_->foot_vel_des[ leg ][ i ];
+            data.wbc_test_data->foot_acc_cmd[ 3 * leg + i ] = input_data_->foot_acc_des[ leg ][ i ];
 
-            WBCtrl::wbc_data_lcm_.jpos_cmd[ 3 * leg + i ] = WBCtrl::des_jpos_[ 3 * leg + i ];
-            WBCtrl::wbc_data_lcm_.jvel_cmd[ 3 * leg + i ] = WBCtrl::des_jvel_[ 3 * leg + i ];
+            data.wbc_test_data->jpos_cmd[ 3 * leg + i ] = WBCtrl::des_jpos_[ 3 * leg + i ];
+            data.wbc_test_data->jvel_cmd[ 3 * leg + i ] = WBCtrl::des_jvel_[ 3 * leg + i ];
 
-            WBCtrl::wbc_data_lcm_.jpos[ 3 * leg + i ] = WBCtrl::state_.q[ 3 * leg + i ];
-            WBCtrl::wbc_data_lcm_.jvel[ 3 * leg + i ] = WBCtrl::state_.qd[ 3 * leg + i ];
+            data.wbc_test_data->jpos[ 3 * leg + i ] = WBCtrl::state_.q[ 3 * leg + i ];
+            data.wbc_test_data->jvel[ 3 * leg + i ] = WBCtrl::state_.qd[ 3 * leg + i ];
         }
 
-        WBCtrl::wbc_data_lcm_.body_pos_cmd[ i ]     = input_data_->body_pos_des[ i ];
-        WBCtrl::wbc_data_lcm_.body_vel_cmd[ i ]     = input_data_->body_vel_des[ i ];
-        WBCtrl::wbc_data_lcm_.body_ori_cmd[ i ]     = quat_des_[ i ];  //input_data_->body_rpy_des[ i ]
-        WBCtrl::wbc_data_lcm_.body_ang_vel_cmd[ i ] = input_data_->body_omg_des[ i ];
+        data.wbc_test_data->body_pos_cmd[ i ]     = input_data_->body_pos_des[ i ];
+        data.wbc_test_data->body_vel_cmd[ i ]     = input_data_->body_vel_des[ i ];
+        data.wbc_test_data->body_ori_cmd[ i ]     = quat_des_[ i ];  //input_data_->body_rpy_des[ i ]
+        data.wbc_test_data->body_ang_vel_cmd[ i ] = input_data_->body_omg_des[ i ];
 
         Quat< T > quat            = WBCtrl::state_.body_orientation;
         Mat3< T > Rot             = ori::QuaternionToRotationMatrix( quat );
         Vec3< T > global_body_vel = Rot.transpose() * WBCtrl::state_.body_velocity.tail( 3 );
 
-        WBCtrl::wbc_data_lcm_.body_pos[ i ]     = WBCtrl::state_.body_position[ i ];
-        WBCtrl::wbc_data_lcm_.body_vel[ i ]     = global_body_vel[ i ];
-        WBCtrl::wbc_data_lcm_.body_ori[ i ]     = WBCtrl::state_.body_orientation[ i ];  // WBCtrl::state_.rpy[ i ];
-        WBCtrl::wbc_data_lcm_.body_ang_vel[ i ] = WBCtrl::state_.body_velocity[ i ];
+        data.wbc_test_data->body_pos[ i ]     = WBCtrl::state_.body_position[ i ];
+        data.wbc_test_data->body_vel[ i ]     = global_body_vel[ i ];
+        data.wbc_test_data->body_ori[ i ]     = WBCtrl::state_.body_orientation[ i ];  // WBCtrl::state_.rpy[ i ];
+        data.wbc_test_data->body_ang_vel[ i ] = WBCtrl::state_.body_velocity[ i ];
     }
-    WBCtrl::wbc_data_lcm_.body_ori_cmd[ 3 ] = quat_des_[ 3 ];
-    WBCtrl::wbc_data_lcm_.body_ori[ 3 ]     = WBCtrl::state_.body_orientation[ 3 ];
-    // TODO: delete lcm publish , for independent thread to publish
-    // if ( data.control_parameters->lcm_debug_switch == 1 )
-    //     WBCtrl::wbc_lcm_.publish( "wbc_lcm_data", &( WBCtrl::wbc_data_lcm_ ) );
+    data.wbc_test_data->body_ori_cmd[ 3 ] = quat_des_[ 3 ];
+    data.wbc_test_data->body_ori[ 3 ]     = WBCtrl::state_.body_orientation[ 3 ];
+
+    // std::cout <<data.wbc_test_data->ToString() << std::endl;
+    // std::cout << "----------------------------------------" << std::endl;
 }
 
 template class LocomotionCtrl< float >;

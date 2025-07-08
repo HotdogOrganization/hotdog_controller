@@ -145,6 +145,7 @@ bool SimulationBridge::InitRobotRunner()
 
   // robot_runner_->SetUserControlParameters(user_control_parameters_);
   robot_runner_->SetVisualizationData( &visualization_data_ );
+  robot_runner_->SetWbcTestData(&wbc_test_data_);
 
   return true;
 }

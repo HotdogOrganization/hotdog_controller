@@ -94,7 +94,11 @@ int HotdogController::GetLegMode( int32_t flags[ 12 ] ) {
 void HotdogController::InitializeController() {
 
     // Initializes the Control FSM with all the required data
-    control_fsm_ = new ControlFsm< float >( quadruped_, state_estimator_, leg_controller_, command_, control_parameters_, visualization_data_, &user_parameters_, &robot_current_state_ );
+    control_fsm_ = new ControlFsm< float >( quadruped_, state_estimator_,
+                                            leg_controller_, command_,
+                                            control_parameters_, visualization_data_,
+                                            wbc_test_data_,
+                                            &user_parameters_, &robot_current_state_ );
 }
 
 /**

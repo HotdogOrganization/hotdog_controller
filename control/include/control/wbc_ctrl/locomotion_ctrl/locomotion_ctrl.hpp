@@ -41,7 +41,7 @@ protected:
     void         ParameterSetup( const UserParameters* param );
     void         ParameterSetup();
     void         CleanUp();
-    virtual void LcmPublishData( ControlFsmData< T >& data );
+    virtual void UpdateWbcData( ControlFsmData< T >& data );
 
     bool task_pd_set_outside_ = false;
 

@@ -4,6 +4,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <Eigen/Dense>
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
@@ -11,9 +13,11 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "sopu_msgs/msg/motor_command.hpp"
 #include "sopu_msgs/msg/motor_status.hpp"
+#include "sopu_msgs/msg/wbc_test_data.hpp"
 #include "sim_utilities/spine_board.hpp"
 #include "sim_utilities/imu_types.hpp"
 #include "sim_utilities/visualization_data.hpp"
+#include "sim_utilities/wbc_test_data.hpp"
 #include "command_interface/command_interface.hpp"
 #include "command_interface/gamepad_command.hpp"
 #include "command_interface/keyboard_command.hpp"
@@ -122,7 +126,8 @@ static inline VectorNavData ConvertToVectorNavData(const float* quat, const floa
   return vector_nav_data;
 }
 
-static inline VectorNavData ConvertToVectorNavData(const sensor_msgs::msg::Imu& imu_msg) {
+static inline VectorNavData ConvertToVectorNavData(const sensor_msgs::msg::Imu& imu_msg)
+{
   VectorNavData vector_nav_data;
   vector_nav_data.quat[0] = imu_msg.orientation.x;
   vector_nav_data.quat[1] = imu_msg.orientation.y;
@@ -140,7 +145,75 @@ static inline VectorNavData ConvertToVectorNavData(const sensor_msgs::msg::Imu& 
   return vector_nav_data;
 }
 
-static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommandMsg(const SpiCommand& spi_command) {
+static inline sopu_msgs::msg::WbcTestData ConvertToWbcTestDataMsg(const WbcTestData& wbc_test_data)
+{
+  sopu_msgs::msg::WbcTestData msg;
+  msg.header.stamp = rclcpp::Clock().now();
+  msg.header.frame_id = "odom";
+  // contact_est
+  for (int i = 0; i < 4; ++i) {
+    msg.contact_est[i] = wbc_test_data.contact_est[i];
+  }
+
+  // fr_des, fr
+  for (int i = 0; i < 12; ++i) {
+    msg.fr_des[i] = wbc_test_data.Fr_des[i];
+    msg.fr[i] = wbc_test_data.Fr[i];
+    msg.foot_pos_cmd[i] = wbc_test_data.foot_pos_cmd[i];
+    msg.foot_vel_cmd[i] = wbc_test_data.foot_vel_cmd[i];
+    msg.foot_acc_cmd[i] = wbc_test_data.foot_acc_cmd[i];
+    msg.foot_acc_numeric[i] = wbc_test_data.foot_acc_numeric[i];
+    msg.foot_pos[i] = wbc_test_data.foot_pos[i];
+    msg.foot_vel[i] = wbc_test_data.foot_vel[i];
+    msg.foot_local_pos[i] = wbc_test_data.foot_local_pos[i];
+    msg.foot_local_vel[i] = wbc_test_data.foot_local_vel[i];
+    msg.jpos_cmd[i] = wbc_test_data.jpos_cmd[i];
+    msg.jvel_cmd[i] = wbc_test_data.jvel_cmd[i];
+    msg.jacc_cmd[i] = wbc_test_data.jacc_cmd[i];
+    msg.jpos[i] = wbc_test_data.jpos[i];
+    msg.jvel[i] = wbc_test_data.jvel[i];
+  }
+
+
+  // body_ori_cmd, body_ori
+  // for (int i = 0; i < 4; ++i) {
+  //   msg.body_ori_cmd[i] = wbc_test_data.body_ori_cmd[i];
+  //   msg.body_ori[i] = wbc_test_data.body_ori[i];
+  // }
+  // body_ori_cmd (quaternion w,x,y,z) -> msg.body_ori_cmd[3] (欧拉角: roll, pitch, yaw)
+  // 四元数转欧拉角
+  Eigen::Quaternionf quat(wbc_test_data.body_ori_cmd[0], wbc_test_data.body_ori_cmd[1],
+                        wbc_test_data.body_ori_cmd[2], wbc_test_data.body_ori_cmd[3]);
+  Eigen::Vector3f euler_angles = quat.toRotationMatrix().eulerAngles(2, 1, 0); // roll, pitch, yaw
+  msg.body_ori_cmd[0] = euler_angles[2]; // roll
+  msg.body_ori_cmd[1] = euler_angles[1]; // pitch
+  msg.body_ori_cmd[2] = euler_angles[0]; // yaw
+  // std::cout << "WBC Body Ori Cmd: " << msg.body_ori_cmd[0] << ", " << msg.body_ori_cmd[1] << ", " << msg.body_ori_cmd[2] << std::endl;
+
+  Eigen::Quaternionf quat_ori(wbc_test_data.body_ori[0], wbc_test_data.body_ori[1],
+                        wbc_test_data.body_ori[2], wbc_test_data.body_ori[3]);
+  Eigen::Vector3f euler_angles_ori = quat_ori.toRotationMatrix().eulerAngles(2, 1, 0); // roll, pitch, yaw
+  msg.body_ori[0] = euler_angles_ori[2]; // roll
+  msg.body_ori[1] = euler_angles_ori[1]; // pitch
+  msg.body_ori[2] = euler_angles_ori[0]; // yaw
+  // std::cout << "WBC Body Ori: " << msg.body_ori[0] << ", " << msg.body_ori[1] << ", " << msg.body_ori[2] << std::endl;
+  // body_pos_cmd, body_vel_cmd, body_ang_vel_cmd, body_pos, body_vel, body_ang_vel, vision_loc
+  for (int i = 0; i < 3; ++i) {
+    msg.body_pos_cmd[i] = wbc_test_data.body_pos_cmd[i];
+    msg.body_vel_cmd[i] = wbc_test_data.body_vel_cmd[i];
+    msg.body_ang_vel_cmd[i] = wbc_test_data.body_ang_vel_cmd[i];
+    msg.body_pos[i] = wbc_test_data.body_pos[i];
+    msg.body_vel[i] = wbc_test_data.body_vel[i];
+    msg.body_ang_vel[i] = wbc_test_data.body_ang_vel[i];
+    msg.vision_loc[i] = wbc_test_data.vision_loc[i];
+  }
+
+  return msg;
+}
+
+
+static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommandMsg(const SpiCommand& spi_command)
+{
   sopu_msgs::msg::MotorCommand motor_command;
   for (int i = 0; i < 4; ++i) {
     motor_command.q_des_abad[i] = spi_command.q_des_abad[i];
@@ -159,7 +232,8 @@ static inline sopu_msgs::msg::MotorCommand ConvertToMotorCommandMsg(const SpiCom
   return motor_command;
 }
 
-static inline sopu_msgs::msg::MotorStatus ConvertToMotorStatusMsg(const SpiData& spi_data) {
+static inline sopu_msgs::msg::MotorStatus ConvertToMotorStatusMsg(const SpiData& spi_data)
+{
   sopu_msgs::msg::MotorStatus motor_status;
   for (int i = 0; i < 4; ++i) {
     motor_status.q_abad[i] = spi_data.q_abad[i];
@@ -176,7 +250,8 @@ static inline sopu_msgs::msg::MotorStatus ConvertToMotorStatusMsg(const SpiData&
   return motor_status;
 }
 
-static inline SpiCommand ConvertToSpiCommand(const sopu_msgs::msg::MotorCommand& motor_command) {
+static inline SpiCommand ConvertToSpiCommand(const sopu_msgs::msg::MotorCommand& motor_command)
+{
   SpiCommand spi_command;
   for (int i = 0; i < 4; ++i) {
     spi_command.q_des_abad[i] = motor_command.q_des_abad[i];

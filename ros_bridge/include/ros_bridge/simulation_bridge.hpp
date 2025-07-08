@@ -73,6 +73,9 @@ public:
   const VisualizationData& GetVisualizationData() const {
     return visualization_data_;
   }
+  const WbcTestData& GetWbcTestData() const {
+    return wbc_test_data_;
+  }
   const StateEstimateData& GetStateEstimateData() const {
     return state_estimate_data_;
   }
@@ -100,6 +103,7 @@ private:
   VectorNavData                   vector_nav_data_;
   VisualizationData               visualization_data_;
   StateEstimateData               state_estimate_data_;
+  WbcTestData                     wbc_test_data_;
 
   std::shared_ptr<GamepadCommand>  gamepad_command_ = nullptr;
   std::shared_ptr<KeyboardCommand> keyboard_command_ = nullptr;
