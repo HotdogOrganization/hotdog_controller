@@ -124,7 +124,8 @@ void CommandInterface::ZeroCmd( MotionControlCommand& cmd ) {
  */
 void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int* gait_id, const RobotType& robotType ) {
     static std::map< int, std::string > to_str{
-        { kGamepadCmd, "kGamepadCmd" }, { kRcCmd, "kRcCmd" }, { kHotdogLcmCmd, "kHotdogLcmCmd" }, { kHotdog2LcmCmd, "kHotdog2LcmCmd" }, { kMotorCmd, "kMotorCmd" },
+        { kGamepadCmd, "kGamepadCmd" }, { kRcCmd, "kRcCmd" }, { kHotdogLcmCmd, "kHotdogLcmCmd" },
+        { kKeyboardCmd, "kKeyboardCmd" }, { kHotdog2LcmCmd, "kHotdog2LcmCmd" }, { kMotorCmd, "kMotorCmd" },
     };
     int current_mode = 0;
     // 1. 最高优先级：遥控器
@@ -636,11 +637,11 @@ void CommandInterface::Rc2Cmd(long int* control_mode, long int* gait_id, const R
         cmd_cur_.vel_des[ 0 ] = 0;
         cmd_cur_.vel_des[ 1 ] = 0;
         cmd_cur_.vel_des[ 2 ] = 0;
-        cmd_cur_.rpy_des[ 0 ] = - rc_cmd_.leftStickAnalog[ 0 ] * 0.6;   // roll
+        cmd_cur_.rpy_des[ 0 ] = rc_cmd_.leftStickAnalog[ 0 ] * 0.6;   // roll
         cmd_cur_.rpy_des[ 1 ] = rc_cmd_.leftStickAnalog[ 1 ] * 0.6;   // pitch
         cmd_cur_.rpy_des[ 2 ] = rc_cmd_.rightStickAnalog[ 0 ] * 0.6;  // yaw
         if ( cmd_cur_.gait_id == 1 || cmd_cur_.gait_id == 3 )
-            cmd_cur_.pos_des[ 2 ] = 0.1 * rc_cmd_.rightStickAnalog[ 1 ];
+            cmd_cur_.pos_des[ 2 ] = - 0.1 * rc_cmd_.rightStickAnalog[ 1 ];
         else
             cmd_cur_.pos_des[ 2 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 ) + 0.1 * rc_cmd_.rightStickAnalog[ 1 ];
         cmd_cur_.contact = 0x0F;
@@ -648,11 +649,12 @@ void CommandInterface::Rc2Cmd(long int* control_mode, long int* gait_id, const R
     else if ( cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid ) {
         // x,y, yaw velocity command
         cmd_cur_.vel_des[ 0 ]     = rc_cmd_.leftStickAnalog[ 1 ];
-        cmd_cur_.vel_des[ 1 ]     = rc_cmd_.leftStickAnalog[ 0 ];
-        cmd_cur_.vel_des[ 2 ]     = rc_cmd_.rightStickAnalog[ 0 ];
+        cmd_cur_.vel_des[ 1 ]     = - rc_cmd_.leftStickAnalog[ 0 ];
+        cmd_cur_.vel_des[ 2 ]     = - rc_cmd_.rightStickAnalog[ 0 ];
         cmd_cur_.rpy_des[ 0 ]     = 0;
         cmd_cur_.rpy_des[ 2 ]     = 0;
-        cmd_cur_.rpy_des[ 1 ]     = rc_cmd_.rightStickAnalog[ 1 ] * 0.4;
+        // Locomotion 中，pitch不使用
+        // cmd_cur_.rpy_des[ 1 ]     = rc_cmd_.rightStickAnalog[ 1 ] * 0.4;
         cmd_cur_.pos_des[ 2 ]     = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 );
         cmd_cur_.step_height[ 0 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.04 : 0.06 );
     }
