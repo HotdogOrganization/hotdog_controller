@@ -12,6 +12,10 @@ from webots_ros2_driver.webots_controller import WebotsController
 from webots_ros2_driver.urdf_spawner import URDFSpawner, get_webots_driver_node
 from launch.actions import OpaqueFunction
 import xacro
+from ament_index_python.packages import get_package_share_directory
+import sys
+sys.path.insert(0, os.path.join(get_package_share_directory("tita_bringup"), "launch"))
+from launch_utils import tita_namespace
 
 # nn = "hxt"
 robot_name = "hotdog_new"
@@ -137,7 +141,7 @@ def launch_setup(context, *args, **kwargs):
                             joint_state_broadcaster_spawner,
                             imu_sensor_broadcaster_spawner,
                             tittai_controller_spawner,
-                            rviz_node,
+                            # rviz_node,
                         ],
                     ),
                 )
@@ -172,7 +176,7 @@ def generate_launch_description():
     declared_arguments.append(
     launch.actions.DeclareLaunchArgument(
         "namespace",
-        default_value="",
+        default_value=tita_namespace,
         description="name space",
         )
     )
