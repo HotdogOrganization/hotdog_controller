@@ -10,25 +10,26 @@
 
 #include "ros_bridge/simulation_bridge.hpp"
 #include "utilities/segfault_handler.hpp"
+#include "hotdog_controller.hpp"
 
 namespace hotdog_locomotion
 {
 
-SimulationBridge::SimulationBridge(RobotType robot_type, RobotController* robot_ctrl)
-: robot_type_(robot_type), controller_(robot_ctrl)
+SimulationBridge::SimulationBridge()
 {
-  task_manager_ = std::make_shared<PeriodicTaskManager>();
+  robot_type_ = RobotType::CYBERDOG2;
+  controller_ = std::make_unique<HotdogController>();
+  task_manager_ = std::make_unique<PeriodicTaskManager>();
 
   robot_params_ = std::make_shared<RobotControlParameters>();
 
-  user_control_parameters_  = robot_ctrl->GetUserControlParameters();
+  user_control_parameters_  = controller_->GetUserControlParameters();
   assert(user_control_parameters_ != nullptr && "User control parameters must not be null");
 }
 
 SimulationBridge::~SimulationBridge()
 {
-  delete user_control_parameters_;
-  delete controller_;
+  // note: user_control_parameters_不需要删除，因为其本身是一个成员变量
 }
 
 
@@ -126,7 +127,7 @@ void SimulationBridge::ClearCommands()
 bool SimulationBridge::InitRobotRunner()
 {
   printf("[SimulationBridge] Initializing RobotRunner...\n");
-  robot_runner_ = std::make_shared<RobotRunnerInterface>(controller_, task_manager_.get(), robot_params_->controller_dt, "robot-control");
+  robot_runner_ = std::make_unique<RobotRunnerInterface>(controller_.get(), task_manager_.get(), robot_params_->controller_dt, "robot-control");
 
   if (!robot_runner_) {
     throw std::runtime_error("[SimulationBridge] RobotRunner is not initialized");
