@@ -30,7 +30,7 @@ public:
     std::vector<int32_t> buttons;
   };
 
-  explicit SimulationBridge(RobotType robot_type, RobotController* robot_ctrl);
+  explicit SimulationBridge();
   ~SimulationBridge();
 
   void Run();
@@ -78,9 +78,9 @@ private:
   ControlParameters*         user_control_parameters_  = nullptr;
 
   bool                       first_controller_run_ = true;
-  std::shared_ptr<PeriodicTaskManager>   task_manager_ = nullptr;
-  RobotController*           controller_   = nullptr;
-  std::shared_ptr<RobotRunnerInterface>  robot_runner_ = nullptr;
+  std::unique_ptr<PeriodicTaskManager>   task_manager_ = nullptr;
+  std::unique_ptr<RobotController>       controller_   = nullptr;
+  std::unique_ptr<RobotRunnerInterface>  robot_runner_ = nullptr;
 
   CommandInterface cmd_interface_;
   SpeedCalibrateParameters speed_param_;

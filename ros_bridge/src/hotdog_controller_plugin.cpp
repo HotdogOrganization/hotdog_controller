@@ -260,7 +260,9 @@ void HotdogControllerPlugin::imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg)
 //       msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z,
 //       msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z
 // );
-
+  RCLCPP_INFO_THROTTLE(
+    get_node()->get_logger(), *get_node()->get_clock(), 60000,
+    "receive motor status OK");
   std::lock_guard<std::mutex> lock(imu_mutex_);
   latest_imu_msg_ = msg;
 }
@@ -279,6 +281,9 @@ void HotdogControllerPlugin::motor_status_cb(const sopu_msgs::msg::MotorStatus::
   //       msg->flag_abad[i], msg->flag_hip[i], msg->flag_knee[i]
   //   );
   // }
+  RCLCPP_INFO_THROTTLE(
+    get_node()->get_logger(), *get_node()->get_clock(), 60000,
+    "receive imu data OK");
   std::lock_guard<std::mutex> lock(motor_mutex_);
   latest_motor_status_msg_ = msg;
 }
@@ -462,14 +467,13 @@ controller_interface::return_type HotdogControllerPlugin::update(
 
 void HotdogControllerPlugin::setup_controller()
 {
-  hotdog_controller_ = std::make_unique<HotdogController>();
-  RobotType robot_type = RobotType::CYBERDOG2;
-  simulation_bridge_ = std::make_unique<SimulationBridge>(robot_type, hotdog_controller_.get());
+
+  simulation_bridge_ = std::make_unique<SimulationBridge>();
 }
 
 void HotdogControllerPlugin::mainLoopThread()
 {
-  RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
+  // RCLCPP_INFO(get_node()->get_logger(), "########################################################################");
 
   // 1. 变量声明提前
   size_t id = 0;
@@ -504,20 +508,12 @@ void HotdogControllerPlugin::mainLoopThread()
       std::lock_guard<std::mutex> lock(motor_mutex_);
       motor_status = std::make_shared<SpiData>(
                       msg_conversion::ConvertToSpiData(*latest_motor_status_msg_));
-      latest_motor_status_msg_.reset();  // 清空最新的电机状态消息
-    } else {
-      RCLCPP_WARN(get_node()->get_logger(), "No motor status message received.");
-      return;  // 如果没有接收到电机状态消息，直接返回
     }
 
     if (latest_imu_msg_ != nullptr) {
       std::lock_guard<std::mutex> lock(imu_mutex_);
       vector_nav_data = std::make_shared<VectorNavData>(
                               msg_conversion::ConvertToVectorNavData(*latest_imu_msg_));
-      latest_imu_msg_.reset();  // 清空最新的IMU消息
-    } else {
-      RCLCPP_WARN(get_node()->get_logger(), "No IMU message received.");
-      return;  // 如果没有接收到IMU消息，直接返回
     }
   }
 
@@ -545,9 +541,13 @@ void HotdogControllerPlugin::mainLoopThread()
         simulation_bridge_->SetGamepadCommand(gamepad_command);
       }
     }
-
-    simulation_bridge_->SetSpiData(*motor_status);
-    simulation_bridge_->SetVectorNavData(*vector_nav_data);
+    if (motor_status != nullptr) {
+      simulation_bridge_->SetSpiData(*motor_status);
+    }
+    if (vector_nav_data != nullptr) {
+      simulation_bridge_->SetVectorNavData(*vector_nav_data);
+    }
+      
     // double roll, pitch, yaw;
     // tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
     simulation_bridge_->Run();

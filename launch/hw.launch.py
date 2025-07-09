@@ -24,11 +24,11 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 sys.path.insert(0, os.path.join(get_package_share_directory("tita_bringup"), "launch"))
 from launch_utils import tita_namespace
 
-robot_name = "hotdog"
+robot_name = "hotdog_new"
 
 def generate_launch_description():
 
-    prefix = tita_namespace
+    prefix = ""
     robot_xacro_path = os.path.join(
         get_package_share_directory(robot_name + "_description"),
         "xacro",
@@ -148,7 +148,7 @@ def generate_launch_description():
         # start_controller,
         tita_controller_spawner,
         command_launch,
-        # hw_broadcaster
+        hw_broadcaster
     ]
 
     return LaunchDescription(nodes)
