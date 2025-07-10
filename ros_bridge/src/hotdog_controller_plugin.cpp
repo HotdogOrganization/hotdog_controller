@@ -15,7 +15,6 @@
 
 #include "ros_bridge/hotdog_controller_plugin.hpp"
 #include "ros_bridge/msg_conversion.hpp"
-// #define SIM_SECTION 
 namespace hotdog_locomotion
 {
 HotdogControllerPlugin::HotdogControllerPlugin() {}
@@ -23,6 +22,7 @@ HotdogControllerPlugin::HotdogControllerPlugin() {}
 controller_interface::CallbackReturn HotdogControllerPlugin::on_init()
 {
   try {
+    sim_mode_ = auto_declare<bool>("sim_mode", false);
     joint_names_ = auto_declare<std::vector<std::string>>("joints", joint_names_);
     command_interface_types_ =
       auto_declare<std::vector<std::string>>("command_interfaces", command_interface_types_);
@@ -80,12 +80,9 @@ controller_interface::CallbackReturn HotdogControllerPlugin::on_configure(
     "/imu/data_raw", rclcpp::SensorDataQoS(),
     std::bind(&HotdogControllerPlugin::imu_cb, this, std::placeholders::_1));
 
-
-  joint_states_subscription_ = get_node()->create_subscription<sopu_msgs::msg::MotorStatus>(
+  motor_status_subscription_ = get_node()->create_subscription<sopu_msgs::msg::MotorStatus>(
       "/motor_status", rclcpp::SensorDataQoS(),
-      std::bind(&HotdogControllerPlugin::joint_states_cb, this, std::placeholders::_1));
-
-
+      std::bind(&HotdogControllerPlugin::motor_status_cb, this, std::placeholders::_1));
 
   odom_publisher_ = get_node()->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
   
@@ -263,16 +260,16 @@ void HotdogControllerPlugin::imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg)
 //       msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z,
 //       msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z
 // );
-
-    std::lock_guard<std::mutex> lock(imu_mutex_);
-    latest_imu_msg_ = *msg;
-    imu_received_ = true;
+  RCLCPP_INFO_THROTTLE(
+    get_node()->get_logger(), *get_node()->get_clock(), 60000,
+    "receive motor status OK");
+  std::lock_guard<std::mutex> lock(imu_mutex_);
+  latest_imu_msg_ = msg;
 }
 
 
-void HotdogControllerPlugin::joint_states_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg)
+void HotdogControllerPlugin::motor_status_cb(const sopu_msgs::msg::MotorStatus::SharedPtr msg)
 {
-
   // for (int i = 0; i < 4; ++i) {
   //   RCLCPP_INFO(get_node()->get_logger(),
   //       "关节%d: q_abad=%.3f q_hip=%.3f q_knee=%.3f | qd_abad=%.3f qd_hip=%.3f qd_knee=%.3f | tau_abad=%.3f tau_hip=%.3f tau_knee=%.3f | temp_abad=%.3f temp_hip=%.3f temp_knee=%.3f | flag_abad=%d flag_hip=%d flag_knee=%d",
@@ -284,14 +281,12 @@ void HotdogControllerPlugin::joint_states_cb(const sopu_msgs::msg::MotorStatus::
   //       msg->flag_abad[i], msg->flag_hip[i], msg->flag_knee[i]
   //   );
   // }
-    std::lock_guard<std::mutex> lock(motor_mutex_);
-    latest_motor_status_msg_ = *msg;
-    motor_status_received_ = true;
+  RCLCPP_INFO_THROTTLE(
+    get_node()->get_logger(), *get_node()->get_clock(), 60000,
+    "receive imu data OK");
+  std::lock_guard<std::mutex> lock(motor_mutex_);
+  latest_motor_status_msg_ = msg;
 }
-
-
-
-
 
 // TODO:
 void HotdogControllerPlugin::cmd_vel_cb(const geometry_msgs::msg::Twist::SharedPtr msg){
@@ -472,70 +467,56 @@ controller_interface::return_type HotdogControllerPlugin::update(
 
 void HotdogControllerPlugin::setup_controller()
 {
-  hotdog_controller_ = std::make_unique<HotdogController>();
-  RobotType robot_type = RobotType::CYBERDOG2;
-  simulation_bridge_ = std::make_unique<SimulationBridge>(robot_type, hotdog_controller_.get());
+
+  simulation_bridge_ = std::make_unique<SimulationBridge>();
 }
 
 void HotdogControllerPlugin::mainLoopThread()
 {
-  RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
+  // RCLCPP_INFO(get_node()->get_logger(), "########################################################################");
 
   // 1. 变量声明提前
   size_t id = 0;
   float abad_effort[4] = {0}, hip_effort[4] = {0}, knee_effort[4] = {0};
   SpiCommand spi_command; // 注意：后面会被赋值
-  static int count = 0;   // 静态变量，记得不要在 if/else 内再声明
 
   // 2. 读取电机和IMU数据
-#ifdef SIM_SECTION
   // 仿真数据读取
-  for (std::shared_ptr<Joint> joint : joints_) {
-    motor_pos_[id] = joint->position_handle->get().get_value();
-    motor_vel_[id] = joint->velocity_handle->get().get_value();
-    id++;
-  }
-  quat_[0] = imu_sensor_->get_orientation()[3];
-  for(size_t id = 0; id < 3; id++) {
-    quat_[id + 1] = imu_sensor_->get_orientation()[id];
-    gyro_[id] = imu_sensor_->get_angular_velocity()[id];
-    accl_[id] = imu_sensor_->get_linear_acceleration()[id];
-  }
-#else
-  // 实车数据读取
-  {
-    std::lock_guard<std::mutex> lock(motor_mutex_);
-    if (motor_status_received_) {
-      for (int leg = 0; leg < 4; ++leg) {
-        motor_pos_[leg * 3 + 0] = latest_motor_status_msg_.q_abad[leg];
-        motor_pos_[leg * 3 + 1] = latest_motor_status_msg_.q_hip[leg];
-        motor_pos_[leg * 3 + 2] = latest_motor_status_msg_.q_knee[leg];
-        motor_vel_[leg * 3 + 0] = latest_motor_status_msg_.qd_abad[leg];
-        motor_vel_[leg * 3 + 1] = latest_motor_status_msg_.qd_hip[leg];
-        motor_vel_[leg * 3 + 2] = latest_motor_status_msg_.qd_knee[leg];
-      }
+  std::shared_ptr<SpiData> motor_status = nullptr;
+  std::shared_ptr<VectorNavData> vector_nav_data = nullptr;
+  if (sim_mode_) {
+    for (std::shared_ptr<Joint> joint : joints_) {
+      motor_pos_[id] = joint->position_handle->get().get_value();
+      motor_vel_[id] = joint->velocity_handle->get().get_value();
+      id++;
     }
-  }
-  {
-    std::lock_guard<std::mutex> lock(imu_mutex_);
-    if (imu_received_) {
-      quat_[0] = latest_imu_msg_.orientation.w;
-      quat_[1] = latest_imu_msg_.orientation.x;
-      quat_[2] = latest_imu_msg_.orientation.y;
-      quat_[3] = latest_imu_msg_.orientation.z;
-      gyro_[0] = latest_imu_msg_.angular_velocity.x;
-      gyro_[1] = latest_imu_msg_.angular_velocity.y;
-      gyro_[2] = latest_imu_msg_.angular_velocity.z;
-      accl_[0] = latest_imu_msg_.linear_acceleration.x;
-      accl_[1] = latest_imu_msg_.linear_acceleration.y;
-      accl_[2] = latest_imu_msg_.linear_acceleration.z;
-    }
-  }
-#endif
+    motor_status = std::make_shared<SpiData>(
+                          msg_conversion::ConvertToSpiData(motor_pos_, motor_vel_, torque_));
 
-  if (!init_flag_) {
-    init_flag_ = true;
+
+    quat_[0] = imu_sensor_->get_orientation()[3];
+    for(size_t id = 0; id < 3; id++) {
+      quat_[id + 1] = imu_sensor_->get_orientation()[id];
+      gyro_[id] = imu_sensor_->get_angular_velocity()[id];
+      accl_[id] = imu_sensor_->get_linear_acceleration()[id];
+    }
+    vector_nav_data = std::make_shared<VectorNavData>(
+                            msg_conversion::ConvertToVectorNavData(quat_, gyro_, accl_));
+  } else {
+    // 实车数据
+    if (latest_motor_status_msg_ != nullptr) {
+      std::lock_guard<std::mutex> lock(motor_mutex_);
+      motor_status = std::make_shared<SpiData>(
+                      msg_conversion::ConvertToSpiData(*latest_motor_status_msg_));
+    }
+
+    if (latest_imu_msg_ != nullptr) {
+      std::lock_guard<std::mutex> lock(imu_mutex_);
+      vector_nav_data = std::make_shared<VectorNavData>(
+                              msg_conversion::ConvertToVectorNavData(*latest_imu_msg_));
+    }
   }
+
   if (simulation_bridge_) {
     // 处理手柄数据
     GamepadCommand gamepad_command;
@@ -560,44 +541,18 @@ void HotdogControllerPlugin::mainLoopThread()
         simulation_bridge_->SetGamepadCommand(gamepad_command);
       }
     }
-    spi_command = simulation_bridge_->GetSpiCommand();
-
-    std::shared_ptr<SpiData> motor_status = nullptr;
-#ifdef SIM_SECTION
-    motor_status = std::make_shared<SpiData>(msg_conversion::ConvertToSpiData(motor_pos_, motor_vel_, torque_));
-#else
-    {
-      std::lock_guard<std::mutex> lock(motor_mutex_);
-      if (motor_status_received_) {
-        motor_status = std::make_shared<SpiData>(
-                                  msg_conversion::ConvertToSpiData(latest_motor_status_msg_));
-      }
-    }
-
-#endif
-
-    if(!motor_status){
-      RCLCPP_WARN(get_node()->get_logger(), "NO motor status");
-      // return;
-    }
-    else
-    {
+    if (motor_status != nullptr) {
       simulation_bridge_->SetSpiData(*motor_status);
     }
-    
-
-    VectorNavData vector_nav_data = msg_conversion::ConvertToVectorNavData(quat_, gyro_, accl_);
-    tf2::Quaternion q(
-      vector_nav_data.quat[0],
-      vector_nav_data.quat[1],
-      vector_nav_data.quat[2],
-      vector_nav_data.quat[3]
-    );
-    double roll, pitch, yaw;
-    tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
-    simulation_bridge_->SetVectorNavData(vector_nav_data);
+    if (vector_nav_data != nullptr) {
+      simulation_bridge_->SetVectorNavData(*vector_nav_data);
+    }
+      
+    // double roll, pitch, yaw;
+    // tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
     simulation_bridge_->Run();
-    // publish_motor_status(*motor_status);
+    
+    const auto spi_command = simulation_bridge_->GetSpiCommand();
 
     static int vis_pub_count = 0;
     if (vis_pub_count % 50 == 0) {
@@ -608,115 +563,60 @@ void HotdogControllerPlugin::mainLoopThread()
     }
     vis_pub_count++;
 
+    static int count = 0;   // 静态变量，记得不要在 if/else 内再声明
     // 4. 控制参数赋值
     if (count < 1000) {
-#ifdef SIM_SECTION
-      for (int i = 0; i < 4; ++i) {
-        abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) + 1.5 * (0 - motor_vel_[i*3+0]) + spi_command.tau_abad_ff[i];
-        hip_effort[i] = 60 * (-1.2 - (-motor_pos_[i*3+1])) + 1.5 * (0 - (-motor_vel_[i*3+1])) + spi_command.tau_hip_ff[i];
-        knee_effort[i] = 60 * (2.5 - (-motor_pos_[i*3+2])) + 1.5 * (0 - (-motor_vel_[i*3+2])) + spi_command.tau_knee_ff[i];
+      if (sim_mode_) {
+        for (int i = 0; i < 4; ++i) {
+          abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) + 1.5 * (0 - motor_vel_[i*3+0]) + spi_command.tau_abad_ff[i];
+          hip_effort[i] = 60 * (-1.2 - (-motor_pos_[i*3+1])) + 1.5 * (0 - (-motor_vel_[i*3+1])) + spi_command.tau_hip_ff[i];
+          knee_effort[i] = 60 * (2.5 - (-motor_pos_[i*3+2])) + 1.5 * (0 - (-motor_vel_[i*3+2])) + spi_command.tau_knee_ff[i];
+        }
+      } else {
+        for (int i = 0; i < 4; ++i) {
+          abad_effort[i] = 0;
+          hip_effort[i] = 0;
+          knee_effort[i] = 0;
+        }
+        SpiCommand temp_spi_command;
+        // 这里你原本是直接赋 spi_command 的参数，这里建议做成 for 循环，简化代码
+        for (int i = 0; i < 4; ++i) {
+          temp_spi_command.q_des_abad[i] = 0;
+          temp_spi_command.q_des_hip[i] = -1.2;
+          temp_spi_command.q_des_knee[i] = 2.5;
+          temp_spi_command.qd_des_abad[i] = 0;
+          temp_spi_command.qd_des_hip[i] = 0;
+          temp_spi_command.qd_des_knee[i] = 0;
+          temp_spi_command.kp_abad[i] = 5;
+          temp_spi_command.kp_hip[i] = 5;
+          temp_spi_command.kp_knee[i] = 5;
+          temp_spi_command.kd_abad[i] = 0.1;
+          temp_spi_command.kd_hip[i] = 0.1;
+          temp_spi_command.kd_knee[i] = 0.1;
+          temp_spi_command.tau_abad_ff[i] = 0;
+          temp_spi_command.tau_hip_ff[i] = 0;
+          temp_spi_command.tau_knee_ff[i] = 0;
+        }
       }
-#else
-      for (int i = 0; i < 4; ++i) {
-        abad_effort[i] = 0;
-        hip_effort[i] = 0;
-        knee_effort[i] = 0;
-      }
-      // 这里你原本是直接赋 spi_command 的参数，这里建议做成 for 循环，简化代码
-      for (int i = 0; i < 4; ++i) {
-        spi_command.q_des_abad[i] = 0;
-        spi_command.q_des_hip[i] = -1.2;
-        spi_command.q_des_knee[i] = 2.5;
-        spi_command.qd_des_abad[i] = 0;
-        spi_command.qd_des_hip[i] = 0;
-        spi_command.qd_des_knee[i] = 0;
-        spi_command.kp_abad[i] = 5;
-        spi_command.kp_hip[i] = 5;
-        spi_command.kp_knee[i] = 5;
-        spi_command.kd_abad[i] = 0.1;
-        spi_command.kd_hip[i] = 0.1;
-        spi_command.kd_knee[i] = 0.1;
-        spi_command.tau_abad_ff[i] = 0;
-        spi_command.tau_hip_ff[i] = 0;
-        spi_command.tau_knee_ff[i] = 0;
-      }
-#endif
       count++;
     } else {
-#ifdef SIM_SECTION
-      for (int i = 0; i < 4; ++i) {
-        abad_effort[i] = spi_command.kp_abad[i] * (spi_command.q_des_abad[i] - motor_pos_[i*3+0])
-                       + spi_command.kd_abad[i] * (0 - motor_vel_[i*3+0])
-                       + spi_command.tau_abad_ff[i];
-        hip_effort[i] = spi_command.kp_hip[i] * (spi_command.q_des_hip[i] - (-motor_pos_[i*3+1]))
-                      + spi_command.kd_hip[i] * (0 - (-motor_vel_[i*3+1]))
-                      + spi_command.tau_hip_ff[i];
-        knee_effort[i] = spi_command.kp_knee[i] * (spi_command.q_des_knee[i] - (-motor_pos_[i*3+2]))
-                       + spi_command.kd_knee[i] * (0 - (-motor_vel_[i*3+2]))
-                       + spi_command.tau_knee_ff[i];
+      if (sim_mode_) {
+        // 仿真模式下
+        for (int i = 0; i < 4; ++i) {
+          abad_effort[i] = spi_command.kp_abad[i] * (spi_command.q_des_abad[i] - motor_pos_[i*3+0])
+                        + spi_command.kd_abad[i] * (0 - motor_vel_[i*3+0])
+                        + spi_command.tau_abad_ff[i];
+          hip_effort[i] = spi_command.kp_hip[i] * (spi_command.q_des_hip[i] - (-motor_pos_[i*3+1]))
+                        + spi_command.kd_hip[i] * (0 - (-motor_vel_[i*3+1]))
+                        + spi_command.tau_hip_ff[i];
+          knee_effort[i] = spi_command.kp_knee[i] * (spi_command.q_des_knee[i] - (-motor_pos_[i*3+2]))
+                        + spi_command.kd_knee[i] * (0 - (-motor_vel_[i*3+2]))
+                        + spi_command.tau_knee_ff[i];
+        }
       }
-#else
-      for (int i = 0; i < 4; ++i) {
-        abad_effort[i] = 0;
-        hip_effort[i] = 0;
-        knee_effort[i] = 0;
-        spi_command.q_des_abad[i] = spi_command.q_des_abad[i];
-        spi_command.q_des_hip[i] = spi_command.q_des_hip[i];
-        spi_command.q_des_knee[i] = spi_command.q_des_knee[i];
-        spi_command.qd_des_abad[i] = 0;
-        spi_command.qd_des_hip[i] = 0;
-        spi_command.qd_des_knee[i] = 0;
-        spi_command.kp_abad[i] = spi_command.kp_abad[i];
-        spi_command.kp_hip[i] = spi_command.kp_hip[i];
-        spi_command.kp_knee[i] = spi_command.kp_knee[i];
-        spi_command.kd_abad[i] = spi_command.kd_abad[i];
-        spi_command.kd_hip[i] = spi_command.kd_hip[i];
-        spi_command.kd_knee[i] = spi_command.kd_knee[i];
-        spi_command.tau_abad_ff[i] = spi_command.tau_abad_ff[i];
-        spi_command.tau_hip_ff[i] = spi_command.tau_hip_ff[i];
-        spi_command.tau_knee_ff[i] = spi_command.tau_knee_ff[i];
-      }
-
-
-      // for (int i = 1; i < 4; ++i) {
-      //   abad_effort[i] = 0;
-      //   hip_effort[i] = 0;
-      //   knee_effort[i] = 0;
-      //   spi_command.q_des_abad[i] = 0;
-      //   spi_command.q_des_hip[i] = 0;
-      //   spi_command.q_des_knee[i] = 0;
-      //   spi_command.qd_des_abad[i] = 0;
-      //   spi_command.qd_des_hip[i] = 0;
-      //   spi_command.qd_des_knee[i] = 0;
-      //   spi_command.kp_abad[i] = 0;
-      //   spi_command.kp_hip[i] = 0;
-      //   spi_command.kp_knee[i] = 0;
-      //   spi_command.kd_abad[i] = 0;
-      //   spi_command.kd_hip[i]  = 0;
-      //   spi_command.kd_knee[i] = 0;
-      //   spi_command.tau_abad_ff[i] = 0;
-      //   spi_command.tau_hip_ff[i]  = 0;
-      //   spi_command.tau_knee_ff[i] = 0;
-      // }
-
-
-
-
-#endif
+      publish_motor_command(spi_command);
     }
-#ifdef SIM_SECTION
 
-
-#else
-    // 限幅
-    float max_val = 20.0;
-    for (int i = 0; i < 4; ++i) {
-      spi_command.tau_abad_ff[i] = std::max(-max_val, std::min(spi_command.tau_abad_ff[i], max_val));
-      spi_command.tau_hip_ff[i]  = std::max(-max_val, std::min(spi_command.tau_hip_ff[i], max_val));
-      spi_command.tau_knee_ff[i] = std::max(-max_val, std::min(spi_command.tau_knee_ff[i], max_val));
-    }
-    publish_motor_command(spi_command);
-    #endif
   }
 
 
@@ -741,31 +641,16 @@ void HotdogControllerPlugin::mainLoopThread()
     }
   }
 
-#ifdef SIM_SECTION
   for (int i = 0; i < 4; ++i) {
     torque_[i * 3 + 0] = abad_effort[i];
     torque_[i * 3 + 1] = -hip_effort[i];
     torque_[i * 3 + 2] = -knee_effort[i];
   }
-#else
-  for (int i = 0; i < 4; ++i) {
-    torque_[i * 3 + 0] = abad_effort[i];
-    torque_[i * 3 + 1] = hip_effort[i];
-    torque_[i * 3 + 2] = knee_effort[i];
-  }
-#endif
 
   // 更新 effort
   for (uint id = 0; id < joints_.size(); id++) {
     joints_[id]->effort_command_handle->get().set_value(torque_[id]);
   }
-
-  // debug信息
-  if(count % 400 == 0){
-    RCLCPP_DEBUG(get_node()->get_logger(), "########################################################################");
-    RCLCPP_DEBUG(get_node()->get_logger(), "\n### WBC Benchmarking");
-  }
-  count++;
 }
 
 

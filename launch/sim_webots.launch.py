@@ -17,7 +17,6 @@ import sys
 sys.path.insert(0, os.path.join(get_package_share_directory("tita_bringup"), "launch"))
 from launch_utils import tita_namespace
 
-# nn = "hxt"
 robot_name = "hotdog_new"
 
 
@@ -62,6 +61,7 @@ def launch_setup(context, *args, **kwargs):
             {"use_sim_time": True},
             {"set_robot_state_publisher": False},
             {"frame_prefix": nn + "/"},
+            {"sim_mode" : True},
             robot_controllers,
         ],
         respawn=True,
@@ -176,7 +176,7 @@ def generate_launch_description():
     declared_arguments.append(
     launch.actions.DeclareLaunchArgument(
         "namespace",
-        default_value=tita_namespace,
+        default_value="",
         description="name space",
         )
     )
