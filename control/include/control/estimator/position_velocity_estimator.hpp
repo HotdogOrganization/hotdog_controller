@@ -1,7 +1,6 @@
 #ifndef POSITION_VELOCITY_ESTIMATOR_HPP_
 #define POSITION_VELOCITY_ESTIMATOR_HPP_
 
-#include <lcm/lcm-cpp.hpp>
 #include <thread>
 
 #include "controllers/state_estimator_container.hpp"
