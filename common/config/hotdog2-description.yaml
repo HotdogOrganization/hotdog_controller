@@ -1,12 +1,12 @@
 __collection-name__: model-parameters
-body_com  :  [0.02195, 0.000096, 0.00149]
-body_mass  :  9.9
-body_inertia  :  [0.040378, -0.000195315, 0.005451652,  
-                  -0.000195315, 0.142540978, 0.000020898,  
-                  0.005451652, 0.000020898, 0.167020448]
+body_com  :  [0.00297404, 0.02430253, -0.02232142]
+body_mass  :  6.472
+body_inertia: [0.10094907, 0.01383993, -0.01990905,  
+               0.01383993, 0.11186911, -0.02850769,  
+              -0.01990905, -0.02850769, 0.14507214]
 body_length  :  0.2252    # abad_offset_x
 body_width  :  0.063      # abad_offset_y
-abad_torque_max  :  48
+abad_torque_max  :  40
 abad_lower_bound  :  -0.6806784082777885
 abad_upper_bound  :  0.6806784082777885
 abad_com  :  [-0.004629, 0.001483, 0.000039]
@@ -20,32 +20,31 @@ rotor_mass  :  0.0567
 rotor_inertia_z  :  [2.53e-05, 0, 0, 0, 2.53e-05, 0, 0, 0, 4.78e-05]
 abad_link_length  :  0.114    # hip_offset
 
-hip_torque_max  :  48
+hip_torque_max  :  40
 front_hip_lower_bound  :  -2.792526803190927
 front_hip_upper_bound  :  1.3264502315156903
-hip_com  :  [-0.002583, -0.032937, -0.020725]
+hip_com  :  [-0.00138658, -0.03660841, -0.01734715]
 
-hip_mass  :  1.43
-hip_inertia  :  [0.007436324, -0.000001653,  0.000445888,
-                -0.000001653, 0.005819691, -0.000014896,
-                  0.000445888, -0.000014896, 0.003253713]
+hip_mass  :  1.308
+hip_inertia: [0.00665749, -0.00000007, 0.000207,
+              -0.00000007, 0.00489936, -0.00000981,
+              0.000207, -0.00000981, 0.00320292]
 hip_rotor_location  :  0.07577
 knee_rotor_location  :  0.0342303
 hip_link_length  :  0.2    # hip_length
 
-knee_torque_max  :  48
+knee_torque_max  :  40
 knee_lower_bound  :  0.5235987755982988
 knee_upper_bound  :  2.5307274153917776
 knee_com  :  [-0.000003, 0.00001, -0.098149]
 
-knee_mass  :  0.5
+knee_mass  :  0.58
 knee_inertia  :  [0.013334051, 0.0, 0.000103,
                   0.0, 0.013438, 0.0,
                   0.000103, 0.0, 0.000149]
 knee_link_length  : 0.208     # knee_length
 
-# foot_radius  :  0.0225
-foot_radius  :  0.0
+foot_radius  :  0.0225
 
 abad_gear_ratio : 9.
 hip_gear_ratio : 9.

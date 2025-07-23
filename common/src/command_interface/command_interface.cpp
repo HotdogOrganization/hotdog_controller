@@ -553,13 +553,18 @@ void CommandInterface::Keyboard2Cmd(long int* control_mode, long int* gait_id, c
     // e.g. 按下shift代表快步
     // if (keyboard_cmd_.fastWalkButton) *gait_id = GaitId::kTrotFast;
 
+    cmd_cur_.mode       = *control_mode;
+
+    if (cmd_cur_.mode == MotionMode::kQpStand && std::fabs(keyboard_cmd_.xVel) > 0.01) {
+        cmd_cur_.mode = MotionMode::kLocomotion;
+    }
+
     // 默认gait逻辑
-    if (*gait_id == 0 && *control_mode == MotionMode::kLocomotion) {
+    if (*gait_id == 0 && cmd_cur_.mode == MotionMode::kLocomotion) {
         *gait_id = GaitId::kTrot10v5;
     }
 
     // 组装最终命令
-    cmd_cur_.mode       = *control_mode;
     cmd_cur_.gait_id    = *gait_id;
     cmd_cur_.cmd_source = kKeyboardCmd;
 
@@ -574,7 +579,7 @@ void CommandInterface::Keyboard2Cmd(long int* control_mode, long int* gait_id, c
         cmd_cur_.rpy_des[0] = keyboard_cmd_.rollPos;
         cmd_cur_.rpy_des[1] = keyboard_cmd_.pitchPos;
         cmd_cur_.rpy_des[2] = keyboard_cmd_.yawPos;
-        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.24 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.32 : 0.32) + keyboard_cmd_.heightPos;
         cmd_cur_.contact = 0x0F;
     }
     else if (cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid) {
@@ -585,8 +590,9 @@ void CommandInterface::Keyboard2Cmd(long int* control_mode, long int* gait_id, c
         cmd_cur_.rpy_des[0] = 0;
         cmd_cur_.rpy_des[1] = 0;
         cmd_cur_.rpy_des[2] = 0;
-        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.24 : 0.32) + keyboard_cmd_.heightPos;
-        cmd_cur_.step_height[0] = (robotType == RobotType::CYBERDOG2 ? 0.04 : 0.06);
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.32 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.step_height[0] = (robotType == RobotType::CYBERDOG2 ? 0.06 : 0.06);
+
     }
 
     // 清除命令队列逻辑
