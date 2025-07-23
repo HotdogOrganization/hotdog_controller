@@ -8,6 +8,7 @@
 #include "robot_current_state.hpp"
 #include "user_parameters.hpp"
 #include "parameters/robot_parameters.hpp"
+#include "sim_utilities/wbc_test_data.hpp"
 
 /**
  * @brief Contains all contol data
@@ -23,6 +24,7 @@ template < typename T > struct ControlFsmData {
     UserParameters*               user_parameters;
     VisualizationData*            visualization_data;
     RobotCurrentState< T >*       robot_current_state;
+    WbcTestData*                  wbc_test_data;
 };
 
 template struct ControlFsmData< double >;

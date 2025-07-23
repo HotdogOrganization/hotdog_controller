@@ -7,6 +7,7 @@
 #include "controllers/state_estimator_container.hpp"
 #include "dynamics/floating_base_model.hpp"
 #include "sim_utilities/visualization_data.hpp"
+#include "sim_utilities/wbc_test_data.hpp"
 
 /**
  * @brief Parent class of user robot controllers.
@@ -111,8 +112,9 @@ protected:
     StateEstimatorResult< float >*    state_estimate_result_ = nullptr;
     RobotControlParameters*           control_parameters_    = nullptr;
     const MotionControlCommand*       command_               = nullptr;
+    VisualizationData*                visualization_data_    = nullptr;
+    WbcTestData*                      wbc_test_data_         = nullptr;
 
-    VisualizationData* visualization_data_ = nullptr;
     RobotType          robot_type_;
 };
 

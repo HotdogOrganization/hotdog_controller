@@ -3,7 +3,6 @@
 
 #include "utilities/utilities.hpp"
 #include "cpp_types.hpp"
-// #include "header/lcm_type/gamepad_lcmt.hpp"
 
 /**
  * @brief The state of the gamepad
@@ -50,56 +49,6 @@ struct GamepadCommand {
         leftStickAnalog    = Vec2< float >::Zero();
         rightStickAnalog   = Vec2< float >::Zero();
     }
-
-    /**
-     * @brief Set the values from an LCM message
-     * @param lcmt : LCM message
-     */
-    // void set( const gamepad_lcmt* lcmt ) {
-    //     leftBumper         = lcmt->leftBumper;
-    //     rightBumper        = lcmt->rightBumper;
-    //     leftTriggerButton  = lcmt->leftTriggerButton;
-    //     rightTriggerButton = lcmt->rightTriggerButton;
-    //     back               = lcmt->back;
-    //     start              = lcmt->start;
-    //     a                  = lcmt->a;
-    //     x                  = lcmt->x;
-    //     b                  = lcmt->b;
-    //     y                  = lcmt->y;
-    //     leftStickButton    = lcmt->leftStickButton;
-    //     rightStickButton   = lcmt->rightStickButton;
-    //     leftTriggerAnalog  = lcmt->leftTriggerAnalog;
-    //     rightTriggerAnalog = lcmt->rightTriggerAnalog;
-    //     for ( int i = 0; i < 2; i++ ) {
-    //         leftStickAnalog[ i ]  = lcmt->leftStickAnalog[ i ];
-    //         rightStickAnalog[ i ] = lcmt->rightStickAnalog[ i ];
-    //     }
-    // }
-
-    /**
-     * @brief Copy the values into an LCM message
-     * @param lcmt : LCM message
-     */
-    // void get( gamepad_lcmt* lcmt ) {
-    //     lcmt->leftBumper         = leftBumper;
-    //     lcmt->rightBumper        = rightBumper;
-    //     lcmt->leftTriggerButton  = leftTriggerButton;
-    //     lcmt->rightTriggerButton = rightTriggerButton;
-    //     lcmt->back               = back;
-    //     lcmt->start              = start;
-    //     lcmt->a                  = a;
-    //     lcmt->x                  = x;
-    //     lcmt->b                  = b;
-    //     lcmt->y                  = y;
-    //     lcmt->leftStickButton    = leftStickButton;
-    //     lcmt->rightStickButton   = rightStickButton;
-    //     lcmt->leftTriggerAnalog  = leftTriggerAnalog;
-    //     lcmt->rightTriggerAnalog = rightTriggerAnalog;
-    //     for ( int i = 0; i < 2; i++ ) {
-    //         lcmt->leftStickAnalog[ i ]  = leftStickAnalog[ i ];
-    //         lcmt->rightStickAnalog[ i ] = rightStickAnalog[ i ];
-    //     }
-    // }
 
     /**
      * @brief The Logitech F310's seem to do a bad job of returning to zero exactly, so a

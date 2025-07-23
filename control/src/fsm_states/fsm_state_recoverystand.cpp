@@ -34,15 +34,17 @@ template < typename T > FSMStateRecoveryStand< T >::FSMStateRecoveryStand( Contr
 
     T L1           = this->data_->quadruped->hip_link_length_;
     T L2           = this->data_->quadruped->knee_link_length_;
-    T com_offset_x = 0.01;
-    T H            = L1 * cos( -0.69 ) + L2 * cos( 0.7 );  // hotdog2: 0.24, hotdog: 0.32
+    T com_offset_x = 0.02;
+    T H            = L1 * cos( -0.69 ) + L2 * cos( 0.7 );  // hotdog: 0.32
     T D            = std::sqrt( H * H + com_offset_x * com_offset_x );
     T alpha2       = 3.141592653589793 - std::acos( ( L1 * L1 + L2 * L2 - D * D ) / ( 2.0 * L1 * L2 ) );
     T alpha1       = std::atan( com_offset_x / H ) - std::acos( ( L1 * L1 + D * D - L2 * L2 ) / ( 2.0 * L1 * D ) );
     // Stand Up
     for ( size_t i( 0 ); i < 4; ++i ) {
-        stand_jpos[ i ] << 0.f, alpha1, alpha2;
+        stand_jpos[ i ] << 0.f, -0.791, 1.5;
     }
+    // TODO: 如果是在qpstand模式下进来的，就获取一下qp的关节位置并站立
+
     flag_ = FoldLegs_;
 }
 
@@ -782,6 +784,26 @@ template < typename T > void FSMStateRecoveryStand< T >::FoldLegs( const int& cu
             fold_ramp_iter_ = 999;
     }
 
+    // for ( int i( 0 ); i < 4; ++i ) {
+    //     fold_jpos_tmp[ i ]( 0 ) = initial_jpos[ i ]( 0 );
+    //     fold_jpos_tmp[ i ]( 1 ) = initial_jpos[ i ]( 1 ) + ( fold_jpos[ i ]( 1 ) + Deg2Rad( 30. ) - initial_jpos[ i ]( 1 ) ) * 2.0 / 3.0;
+    //     fold_jpos_tmp[ i ]( 2 ) = initial_jpos[ i ]( 2 ) + ( fold_jpos[ i ]( 2 ) - initial_jpos[ i ]( 2 ) ) * 2.0 / 3.0;
+
+    //     fold_jpos_tmp1[ i ]( 0 ) = 0;
+    //     fold_jpos_tmp1[ i ]( 1 ) = initial_jpos[ i ]( 1 ) + ( fold_jpos[ i ]( 1 ) + Deg2Rad( 30. ) - initial_jpos[ i ]( 1 ) ) * 2.0 / 3.0;
+    //     fold_jpos_tmp1[ i ]( 2 ) = initial_jpos[ i ]( 2 ) + ( fold_jpos[ i ]( 2 ) - initial_jpos[ i ]( 2 ) ) * 2.0 / 3.0;
+
+    //     if ( curr_iter < fold_ramp_iter_ / 3 ) {
+    //         SetJPosInterPts( fabs( curr_iter ), fold_ramp_iter_ / 3, i, initial_jpos[ i ], fold_jpos_tmp[ i ] );
+    //     }
+    //     else if ( curr_iter < 2 * fold_ramp_iter_ / 3 ) {
+    //         SetJPosInterPts( fabs( curr_iter ) - fold_ramp_iter_ / 3, fold_ramp_iter_ / 3, i, fold_jpos_tmp[ i ], fold_jpos_tmp1[ i ] );
+    //     }
+    //     else {
+    //         SetJPosInterPts( curr_iter - 2 * fold_ramp_iter_ / 3, fold_ramp_iter_ / 3, i, fold_jpos_tmp1[ i ], fold_jpos[ i ] );
+    //     }
+    // }
+
     for ( int i( 0 ); i < 4; ++i ) {
         fold_jpos_tmp[ i ]( 0 ) = initial_jpos[ i ]( 0 );
         fold_jpos_tmp[ i ]( 1 ) = initial_jpos[ i ]( 1 ) + ( fold_jpos[ i ]( 1 ) + Deg2Rad( 30. ) - initial_jpos[ i ]( 1 ) ) * 2.0 / 3.0;
@@ -1201,7 +1223,7 @@ template < typename T > void FSMStateRecoveryStand< T >::JointPdControl( int leg
     auto& leg_ctrl = this->data_->leg_controller;
 
     if ( this->data_->quadruped->robot_type_ == RobotType::CYBERDOG2 ) {
-        leg_ctrl->commands_[ leg ].kp_joint << 100, 0, 0, 0, 100, 0, 0, 0, 100;
+        leg_ctrl->commands_[ leg ].kp_joint << 130, 0, 0, 0, 130, 0, 0, 0, 220;
         leg_ctrl->commands_[ leg ].kd_joint << 4, 0, 0, 0, 4, 0, 0, 0, 4;
         // leg_ctrl->commands_[ leg ].kp_joint << 240, 0, 0, 0, 240, 0, 0, 0, 180;
         // leg_ctrl->commands_[ leg ].kd_joint << 7.5, 0, 0, 0, 6, 0, 0, 0, 4.5;

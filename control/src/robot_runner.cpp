@@ -44,7 +44,11 @@ void RobotRunner::InitTask() {
 
     // Always initialize the leg controller and state entimator
     leg_controller_  = new LegController< float >( quadruped_ );
-    state_estimator_ = new StateEstimatorContainer< float >( cheater_state_, vector_nav_data_, leg_controller_->datas_, &state_estimate_result_, control_parameters_ );
+    state_estimator_ = new StateEstimatorContainer< float >(
+                                cheater_state_, vector_nav_data_,
+                                leg_controller_->datas_, &state_estimate_result_,
+                                control_parameters_ );
+
     InitializeStateEstimator( false );
 
     // TODO: Init command interface
@@ -60,6 +64,7 @@ void RobotRunner::InitTask() {
     robot_ctrl_->visualization_data_ = visualization_data_;
     robot_ctrl_->control_parameters_ = control_parameters_;
     robot_ctrl_->command_            = &cmd_interface_->GetCommand();
+    robot_ctrl_->wbc_test_data_      = wbc_test_data_;
 
     robot_ctrl_->InitializeController();
 }

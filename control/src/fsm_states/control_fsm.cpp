@@ -14,12 +14,17 @@
  * @param cmd get the desired control cmd
  * @param control_parameters passes in the control parameters from the GUI
  * @param visualization_data data for visualization
+ * @param wbc_test_data data for WBC test
  * @param user_parameters passes in the user parameters from the GUI
  * @param robot_current_state passes the robot current state
  */
 template < typename T >
-ControlFsm< T >::ControlFsm( Quadruped< T >* quadruped, StateEstimatorContainer< T >* state_estimator, LegController< T >* leg_controller, const MotionControlCommand* cmd,
-                             RobotControlParameters* control_parameters, VisualizationData* visualization_data, UserParameters* user_parameters, RobotCurrentState< T >* robot_current_state ) {
+ControlFsm< T >::ControlFsm( Quadruped< T >* quadruped, StateEstimatorContainer< T >* state_estimator,
+                             LegController< T >* leg_controller, const MotionControlCommand* cmd,
+                             RobotControlParameters* control_parameters, VisualizationData* visualization_data,
+                             WbcTestData* wbc_test_data,
+                             UserParameters* user_parameters, RobotCurrentState< T >* robot_current_state )
+{
     // Add the pointers to the ControlFsmData struct
     data.quadruped           = quadruped;
     data.state_estimator     = state_estimator;
@@ -27,6 +32,7 @@ ControlFsm< T >::ControlFsm( Quadruped< T >* quadruped, StateEstimatorContainer<
     data.command             = cmd;
     data.control_parameters  = control_parameters;
     data.visualization_data  = visualization_data;
+    data.wbc_test_data       = wbc_test_data;  // Pass the WBC test data pointer
     data.user_parameters     = user_parameters;
     data.robot_current_state = robot_current_state;
 

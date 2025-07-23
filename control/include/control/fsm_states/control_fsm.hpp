@@ -71,8 +71,11 @@ template < typename T > class ControlFsm {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    ControlFsm( Quadruped< T >* quadruped, StateEstimatorContainer< T >* state_estimator, LegController< T >* leg_controller, const MotionControlCommand* cmd,
-                RobotControlParameters* control_parameters, VisualizationData* visualization_data, UserParameters* user_parameters, RobotCurrentState< T >* robot_current_state );
+    ControlFsm( Quadruped< T >* quadruped, StateEstimatorContainer< T >* state_estimator,
+                LegController< T >* leg_controller, const MotionControlCommand* cmd,
+                RobotControlParameters* control_parameters, VisualizationData* visualization_data,
+                WbcTestData* wbc_test_data,
+                UserParameters* user_parameters, RobotCurrentState< T >* robot_current_state );
 
     // Initializes the Control FSM instance
     void Initialize();
@@ -135,8 +138,6 @@ private:
     Vec3< T > max_foot_pos_for_lift_, min_joint_torque_for_lift_, max_omega_for_lift_, max_rpy_for_lift_;  // For robot lifted
     T         max_leg_length_for_lift_;
     RobotType robot_type_;
-    // lcm::LCM state_estimator_lcm;
-    // state_estimator_lcmt _state_estimator;
 };
 
 #endif  // CONTROL_FSM_HPP_

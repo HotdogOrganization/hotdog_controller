@@ -35,6 +35,9 @@ void RobotRunnerInterface::SetRobotControlParameters( RobotControlParameters* va
 void RobotRunnerInterface::SetVisualizationData( VisualizationData* value ) {
     robot_runner_->visualization_data_ = value;
 }
+void RobotRunnerInterface::SetWbcTestData( WbcTestData* value ) {
+    robot_runner_->wbc_test_data_ = value;
+}
 void RobotRunnerInterface::SetHotdog2Visualization( Hotdog2Visualization* value ) {
     robot_runner_->hotdog2_main_visualization_ = value;
 }

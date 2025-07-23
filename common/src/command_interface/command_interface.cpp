@@ -55,13 +55,13 @@ void CommandInterface::ProcessGamepadCommand( const GamepadCommand& gamepad_cmd 
     gamepad_timer_.StartTimer();
 }
 
-// void CommandInterface::ProcessGamepadCommand( const gamepad_lcmt* gamepad_cmd ) {
-//     gamepad_cmd_.set( gamepad_cmd );
-//     gamepad_timer_.StartTimer();
-// }
+void CommandInterface::ProcessKeyboardCommand( const KeyboardCommand& keyboard_cmd ) {
+    keyboard_cmd_ = keyboard_cmd;
+    keyboard_timer_.StartTimer();
+}
 
-void CommandInterface::ProcessRcCommand( const RcCommand* rc_cmd ) {
-    memcpy( &rc_cmd_, rc_cmd, sizeof( RcCommand ) );
+void CommandInterface::ProcessRcCommand( const RcCommand& rc_cmd ) {
+    rc_cmd_ = rc_cmd;
     rc_timer_.StartTimer();
 }
 
@@ -72,15 +72,7 @@ void CommandInterface::ProcessRcUdpCommand( const RcCommand* rc_udp_cmd ) {
     rc_udp_timer_.StartTimer();
 }
 
-// void CommandInterface::ProcessHotdogLcmCommand( const motion_control_request_lcmt* lcm_cmd ) {
-//     memcpy( &hotdog_lcm_cmd_, lcm_cmd, sizeof( motion_control_request_lcmt ) );
-//     hotdog_lcm_timer_.StartTimer();
-// }
 
-// void CommandInterface::ProcessLcmCommand( const robot_control_cmd_lcmt* lcm_cmd ) {
-//     memcpy( &lcm_cmd_, lcm_cmd, sizeof( robot_control_cmd_lcmt ) );
-//     lcm_timer_.StartTimer();
-// }
 // void CommandInterface::ProcessLcmMotorCtrlCommand( const motor_ctrl_lcmt* ctrl_cmd ) {
 //     memcpy( &motor_ctrl_cmd_, ctrl_cmd, sizeof( motor_ctrl_lcmt ) );
 //     MotorCtrl_mode_flag_ = true;
@@ -132,43 +124,38 @@ void CommandInterface::ZeroCmd( MotionControlCommand& cmd ) {
  */
 void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int* gait_id, const RobotType& robotType ) {
     static std::map< int, std::string > to_str{
-        { kGamepadCmd, "kGamepadCmd" }, { kRcCmd, "kRcCmd" }, { kHotdogLcmCmd, "kHotdogLcmCmd" }, { kHotdog2LcmCmd, "kHotdog2LcmCmd" }, { kMotorCmd, "kMotorCmd" },
+        { kGamepadCmd, "kGamepadCmd" }, { kRcCmd, "kRcCmd" }, { kHotdogLcmCmd, "kHotdogLcmCmd" },
+        { kKeyboardCmd, "kKeyboardCmd" }, { kHotdog2LcmCmd, "kHotdog2LcmCmd" }, { kMotorCmd, "kMotorCmd" },
     };
-
     int current_mode = 0;
-    // if ( !use_rc ) {
-    //     if ( gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-            current_mode = kGamepadCmd;
-    //     }
-    //     else if ( gamepad_timer_.GetElapsedSeconds() < 2 * CMD_TIMEOUT ) {
-    //         *control_mode = MotionMode::kPureDamper;
-    //         *gait_id      = 0;
-    //         current_mode  = 0;
-    //     }
-    // }
-    // else {  // rc & lcm
-    //     if ( rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT || rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kRcCmd;
-    //     }
-    //     else if ( MotorCtrl_mode_flag_ ) {
-    //         current_mode = kMotorCmd;
-    //     }
-    //     else if ( lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kHotdog2LcmCmd;
-    //     }
-    //     else if ( hotdog_lcm_timer_.GetElapsedSeconds() < CMD_TIMEOUT ) {
-    //         current_mode = kHotdogLcmCmd;
-    //     }
-    //     else {
-    //         // all source timeout, make the dog puredamper
-    //         if ( command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast< int >( MotionMode::kOff ) )
-    //             *control_mode = MotionMode::kPureDamper;
-    //         else
-    //             *control_mode = MotionMode::kOff;
-    //         current_mode = 0;
-    //         *gait_id     = 0;
-    //     }
-    // }
+    // 1. 最高优先级：遥控器
+    if (rc_timer_.GetElapsedSeconds() < CMD_TIMEOUT ||
+        rc_udp_timer_.GetElapsedSeconds() < CMD_TIMEOUT)
+    {
+        current_mode = kRcCmd;
+        // 此时control_mode等参数由RC命令决定，不做强制干预
+    } 
+    // 2. 次级：手柄/gamepad
+    else if (gamepad_timer_.GetElapsedSeconds() < CMD_TIMEOUT) {
+        current_mode = kGamepadCmd;
+        // 此时control_mode等参数由gamepad命令决定
+    } 
+    // 3. 第3级：键盘
+    else if (keyboard_timer_.GetElapsedSeconds() < CMD_TIMEOUT) {
+        current_mode = kKeyboardCmd;
+        // 此时control_mode等参数由键盘命令决定
+    } 
+    // 4. 全部超时
+    else {
+        // all sources timeout, make the dog pure damper/off
+        if (command_.mode != MotionMode::kOff && current_fsm_state_ != static_cast<int>(MotionMode::kOff)) {
+            *control_mode = MotionMode::kPureDamper;
+        } else {
+            *control_mode = MotionMode::kOff;
+        }
+        current_mode = 0;
+        *gait_id = 0;
+    }
 
     if ( current_mode != last_mode_ ) {
         std::cout << "[CommandInterface::PrepareCmd] ";
@@ -185,8 +172,11 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
     case kGamepadCmd:
         Gamepad2Cmd( control_mode, gait_id, robotType );
         break;
+    case kKeyboardCmd:
+        Keyboard2Cmd( control_mode, gait_id, robotType );
+        break;
     case kRcCmd:
-        Rc2Cmd( robotType );
+        Rc2Cmd( control_mode, gait_id, robotType );
         break;
     case kHotdog2LcmCmd:
         // Lcm2Cmd();
@@ -469,8 +459,8 @@ void CommandInterface::PrepareCmd( int use_rc, long int* control_mode, long int*
     duration_old = command_.duration;
 }
 
-void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, const RobotType& robotType ) {
-
+void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, const RobotType& robotType )
+{
     if ( gamepad_cmd_.back ) {
         *control_mode = MotionMode::kOff;
     }
@@ -506,24 +496,24 @@ void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, c
         cmd_cur_.vel_des[ 0 ] = 0;
         cmd_cur_.vel_des[ 1 ] = 0;
         cmd_cur_.vel_des[ 2 ] = 0;
-        cmd_cur_.rpy_des[ 0 ] = gamepad_cmd_.rpy[0];   // roll
-        cmd_cur_.rpy_des[ 1 ] = gamepad_cmd_.rpy[1];   // pitch
-        cmd_cur_.rpy_des[ 2 ] = gamepad_cmd_.rpy[2];   // yaw
+        cmd_cur_.rpy_des[ 0 ] = - gamepad_cmd_.leftStickAnalog[ 0 ] * 0.6;   // roll
+        cmd_cur_.rpy_des[ 1 ] = gamepad_cmd_.leftStickAnalog[ 1 ] * 0.6;   // pitch
+        cmd_cur_.rpy_des[ 2 ] = gamepad_cmd_.rightStickAnalog[ 0 ] * 0.6;  // yaw
         if ( cmd_cur_.gait_id == 1 || cmd_cur_.gait_id == 3 )
-            cmd_cur_.pos_des[ 2 ] = 0.1 * gamepad_cmd_.rightStickAnalog[ 0 ];
+            cmd_cur_.pos_des[ 2 ] = 0.1 * gamepad_cmd_.rightStickAnalog[ 1 ];
         else
-            cmd_cur_.pos_des[ 2 ] = 0.24 + 0.5 * gamepad_cmd_.xyz[2];
+            cmd_cur_.pos_des[ 2 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 ) + 0.1 * gamepad_cmd_.rightStickAnalog[ 1 ];
         cmd_cur_.contact = 0x0F;
     }
     else if ( cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid ) {
         // x,y, yaw velocity command
-        cmd_cur_.vel_des[ 0 ]     = gamepad_cmd_.xyz[ 0 ];
-        cmd_cur_.vel_des[ 1 ]     = gamepad_cmd_.xyz[ 1 ];
-        cmd_cur_.vel_des[ 2 ]     = gamepad_cmd_.yaw_direction;
+        cmd_cur_.vel_des[ 0 ]     = gamepad_cmd_.leftStickAnalog[ 1 ];
+        cmd_cur_.vel_des[ 1 ]     = gamepad_cmd_.leftStickAnalog[ 0 ];
+        cmd_cur_.vel_des[ 2 ]     = gamepad_cmd_.rightStickAnalog[ 0 ];
         cmd_cur_.rpy_des[ 0 ]     = 0;
         cmd_cur_.rpy_des[ 2 ]     = 0;
         cmd_cur_.rpy_des[ 1 ]     = gamepad_cmd_.rightStickAnalog[ 1 ] * 0.4;
-        cmd_cur_.pos_des[ 2 ]     = 0.24 + gamepad_cmd_.xyz[2];
+        cmd_cur_.pos_des[ 2 ]     = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 );
         cmd_cur_.step_height[ 0 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.04 : 0.06 );
     }
 
@@ -540,375 +530,140 @@ void CommandInterface::Gamepad2Cmd( long int* control_mode, long int* gait_id, c
     cmd_list_.push( cmd_cur_ );
 }
 
-void CommandInterface::Rc2Cmd( const RobotType& robotType ) {
-    // AT9S
-    auto estop_switch         = rc_cmd_.SWE;
-    auto QP_Locomotion_switch = rc_cmd_.SWA;
-    auto left_select          = rc_cmd_.SWC;
-    auto right_select         = rc_cmd_.SWD;
-    auto jump_flip_switch     = rc_cmd_.SWG;
-    auto step_height          = ( rc_cmd_.varB + 1.0 ) * ( ( robotType == RobotType::CYBERDOG2 ) ? 0.09 : 0.1 );
-    // T8S
-    auto left_tri_switch  = rc_cmd_.CH7;
-    auto right_tri_switch = rc_cmd_.CH5;
-    auto right_buttion    = rc_cmd_.CH6;
-
-    cmd_cur_.cmd_source = kRcCmd;
-    if ( rc_cmd_.rc_type == 2 ) {  // T8S
-        switch ( left_tri_switch ) {
-        case T8S_TRI_UP:
-            switch ( right_tri_switch ) {
-            case T8S_TRI_MIDDLE:
-                cmd_cur_.mode    = MotionMode::kPureDamper;
-                cmd_cur_.gait_id = 1;
-                break;
-            case T8S_TRI_UP:
-                cmd_cur_.mode = MotionMode::kOff;
-                break;
-            default:
-                cmd_cur_.mode    = MotionMode::kPureDamper;
-                cmd_cur_.gait_id = 1;
-                break;
-            }
-            break;
-        case T8S_TRI_MIDDLE:
-            switch ( right_tri_switch ) {
-            case T8S_TRI_UP:
-                cmd_cur_.mode    = MotionMode::kMotion;
-                cmd_cur_.gait_id = MotionId::kHiFiveLeft;
-                break;
-            case T8S_TRI_MIDDLE:
-                cmd_cur_.mode    = MotionMode::kRecoveryStand;
-                switch_tri_flag_ = -1;
-                break;
-            case T8S_TRI_DOWN:
-                if ( switch_tri_flag_ == -1 ) {
-                    if ( rc_cmd_.left_stick_x > 0.8 && rc_cmd_.left_stick_y < -0.8 )
-                        switch_tri_flag_ = 1;
-                    else if ( rc_cmd_.left_stick_x > 0.8 && rc_cmd_.left_stick_y > 0.8 )
-                        switch_tri_flag_ = 2;
-                    else if ( rc_cmd_.left_stick_x < -0.8 && rc_cmd_.left_stick_y < -0.8 )
-                        switch_tri_flag_ = 3;
-                    else if ( rc_cmd_.left_stick_x < -0.8 && rc_cmd_.left_stick_y > 0.8 )
-                        switch_tri_flag_ = 4;
-                    else
-                        switch_tri_flag_ = 0;
-                    std::cout << "function switch_tri_flag_=" << switch_tri_flag_ << std::endl;
-                }
-                switch ( switch_tri_flag_ ) {
-                case 0:
-                    cmd_cur_.mode = MotionMode::kTwoLegStand;
-                    break;
-                case 1:
-                    cmd_cur_.mode = MotionMode::kJump3d;
-                    break;
-                default:
-                    cmd_cur_.mode = MotionMode::kRecoveryStand;
-                }
-                break;
-            }
-            speed_offset_rc_flag_ = false;
-            break;
-        case T8S_TRI_DOWN:
-            switch ( right_tri_switch ) {
-                // cmd_cur_.mode = MotionMode::kLocomotion;
-            case T8S_TRI_UP:
-                cmd_cur_.mode = MotionMode::kRecoveryStand;
-                // cmd_cur_.gait_id = GaitId::kTrotFast;
-                break;
-            case T8S_TRI_MIDDLE:
-                cmd_cur_.gait_id = GaitId::kTrotMedium;
-                // // cmd_cur_.gait_id = GaitId::kTrot24v16;
-                // // cmd_cur_.gait_id = GaitId::kTrot20v12Follow;
-                break;
-            case T8S_TRI_DOWN:
-                cmd_cur_.gait_id = GaitId::kTrotSlow;  // For factory calibrate
-                // // cmd_cur_.gait_id = GaitId::kBound;
-                break;
-            }
-#if ( ONBOARD_BUILD == 1 )
-            int ret = 1;
-            if ( rc_cmd_old_.CH7 != rc_cmd_.CH7 ) {
-                if ( right_buttion == T8S_BOOL_DOWN ) {
-                    ret = system( "mount -o remount,rw /mnt/misc/" );
-                    if ( ret < 0 )
-                        printf( "[FACTORY] remount /mnt/misc/ Failed!\n" );
-                    else
-                        speed_offset_rc_flag_ = true;  // For factory speed offset set
-                    printf( "[FACTORY] Enter factory offset mode! varB=%.2f\n", rc_cmd_.varB );
-                }
-            }
-#endif
-            break;
-        }
-        // For factory speed offset trigger in runSpeedConfig()
-        if ( right_buttion == T8S_BOOL_DOWN && speed_offset_rc_flag_ ) {
-            if ( rc_cmd_.varB > 0 )
-                speed_offset_rc_trigger_ = 1;
-            else if ( rc_cmd_.varB < -0.5 )
-                speed_offset_rc_trigger_ = 4;
-            else if ( right_tri_switch == T8S_TRI_MIDDLE )
-                speed_offset_rc_trigger_ = 2;  // front gain
-            else if ( right_tri_switch == T8S_TRI_DOWN )
-                speed_offset_rc_trigger_ = 3;  // back gain
-            else
-                speed_offset_rc_trigger_ = 0;
-        }
-        else
-            speed_offset_rc_trigger_ = 0;
+void CommandInterface::Keyboard2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType)
+{
+    // Control mode按键判断
+    if (keyboard_cmd_.recoveryStandButton) {
+        *control_mode = MotionMode::kRecoveryStand;
     }
-    else {  // AT9S
-        switch ( estop_switch ) {
-        case AT9S_TRI_UP:
-            cmd_cur_.mode = MotionMode::kOff;
-            break;
+    if (keyboard_cmd_.balanceStandButton) {
+        *control_mode = MotionMode::kQpStand;
+    }
+    if (keyboard_cmd_.locomotionButton) {
+        *control_mode = MotionMode::kLocomotion;
+    }
+    if (keyboard_cmd_.pureDumpButton) {
+        *control_mode = MotionMode::kPureDamper;
+    }
+    // 可以根据需要加一个 "Off" 按钮，比如 Esc 或特定键
+    // if (keyboard_cmd_.offButton) *control_mode = MotionMode::kOff;
 
-        case AT9S_TRI_MIDDLE:
-            switch ( jump_flip_switch ) {
-            case AT9S_TRI_UP:
-                if ( QP_Locomotion_switch == AT9S_BOOL_DOWN ) {
-                    cmd_cur_.mode = MotionMode::kMotion;
-                    switch ( right_select ) {
-                    case AT9S_BOOL_UP:
-                        switch ( left_select ) {
-                        case AT9S_TRI_UP:
-                            // cmd_cur_.gait_id = MotionId::kMotionAllInOne;
-                            // cmd_cur_.gait_id = MotionId::kHiFiveLeft;
-                            // cmd_cur_.gait_id = MotionId::kHiFiveRight;
-                            // cmd_cur_.gait_id = MotionId::kMotionBallet;
-                            cmd_cur_.gait_id = MotionId::kMotionMoonwalk;
-                            break;
-                        case AT9S_TRI_MIDDLE:
-                            cmd_cur_.gait_id = MotionId::kMotionFrontLift;
-                            // cmd_cur_.gait_id = MotionId::kMotionRearLift;
-                            // cmd_cur_.gait_id = MotionId::kMotionPitchLeft;
-                            // cmd_cur_.gait_id = MotionId::kMotionPitchRight;
-                            // cmd_cur_.gait_id = MotionId::kMotionDiagonalLeft;
-                            // cmd_cur_.gait_id = MotionId::kMotionDiagonalRight;
-                            break;
-                        case AT9S_TRI_DOWN:
-                            cmd_cur_.gait_id = MotionId::kMotionWalkWave;
-                            // cmd_cur_.gait_id = MotionId::kMotionTrotInOut;
-                            // cmd_cur_.gait_id = MotionId::kMotionTrotPitch;
-                            // cmd_cur_.gait_id = MotionId::kMotionFrontLiftForward;
-                            // cmd_cur_.gait_id = MotionId::kMotionRearLiftForward;
-                            break;
-                        }
-                        break;
-                    case AT9S_BOOL_DOWN:
-                        switch ( left_select ) {
-                        case AT9S_TRI_UP:
-                            // cmd_cur_.gait_id = MotionId::kMotionFrontSwitch;
-                            // cmd_cur_.gait_id = MotionId::kMotionRearSwitch;
-                            cmd_cur_.gait_id = MotionId::kMotionJump3d;
-                            // cmd_cur_.gait_id = MotionId::kMotionTrotSwing;
-                            break;
-                        case AT9S_TRI_MIDDLE:
-                            // cmd_cur_.gait_id = MotionId::kMotionSpecialPronk;
-                            // cmd_cur_.gait_id = MotionId::kMotionSpecialTrot;
-                            // cmd_cur_.gait_id = MotionId::kMotionMoonwalkLeft;
-                            // cmd_cur_.gait_id = MotionId::kMotionMoonwalkRight;
-                            cmd_cur_.gait_id = MotionId::kMotionMoonwalkBack;
-                            break;
-                        case AT9S_TRI_DOWN:
-                            // cmd_cur_.gait_id = MotionId::kMotionFrontLiftForward;
-                            cmd_cur_.gait_id = MotionId::kMotionBallet;
-                            break;
-                        }
-                        break;
-                    }
-                }
-                break;
-            case AT9S_TRI_MIDDLE:
-                if ( QP_Locomotion_switch == AT9S_BOOL_UP ) {
-                    cmd_cur_.mode = MotionMode::kPureDamper;
-                }
-                else if ( QP_Locomotion_switch == AT9S_BOOL_DOWN ) {
-                    cmd_cur_.mode = MotionMode::kRecoveryStand;
-                    // if ( rc_cmd_old_.SWD != rc_cmd_.SWD )
-                    //     cmd_cur_.gait_id = 17;
-                    // else
-                    //     cmd_cur_.gait_id = 0;
-                }
-                break;
-            case AT9S_TRI_DOWN:
-                if ( QP_Locomotion_switch == AT9S_BOOL_DOWN ) {
-                    // cmd_cur_.mode = MotionMode::kTwoLegStand;
-                    cmd_cur_.mode = MotionMode::kJump3d;
-                    switch ( right_select ) {
-                    case AT9S_BOOL_UP:
-                        switch ( left_select ) {
-                        case AT9S_TRI_UP:
-                            cmd_cur_.gait_id = JumpId::kJumpPosYaw90;
-                            break;
-                        case AT9S_TRI_MIDDLE:
-                            cmd_cur_.gait_id = JumpId::kJumpPosZ30;
-                            // cmd_cur_.gait_id = JumpId::kJumpPosX60;
-                            break;
-                        case AT9S_TRI_DOWN:
-                            cmd_cur_.gait_id = JumpId::kJumpDownStair;
-                            break;
-                        }
-                        break;
-                    case AT9S_BOOL_DOWN:
-                        switch ( left_select ) {
-                        case AT9S_TRI_UP:
-                            cmd_cur_.gait_id = JumpId::kJumpNegYaw90;
-                            // cmd_cur_.gait_id = JumpId::kJumpDonwTrunk;
-                            break;
-                        case AT9S_TRI_MIDDLE:
-                            cmd_cur_.gait_id = JumpId::kJumpPosX30;
-                            break;
-                        case AT9S_TRI_DOWN:
-                            cmd_cur_.gait_id = JumpId::kJumpNegY20;
-                            break;
-                        }
-                        break;
-                    }
-                }
-                break;
-            }
-            break;
+    // Gait判断（可以指定某些快捷键切gait）
+    // 这里可根据你的需要扩展，比如给不同键映射不同gait
+    // e.g. 按下shift代表快步
+    // if (keyboard_cmd_.fastWalkButton) *gait_id = GaitId::kTrotFast;
 
-        case AT9S_TRI_DOWN:
-            switch ( jump_flip_switch ) {
-            case AT9S_TRI_UP:
-                cmd_cur_.mode = MotionMode::kPureDamper;
-                break;
+    cmd_cur_.mode       = *control_mode;
 
-            case AT9S_TRI_MIDDLE:
-                if ( QP_Locomotion_switch == AT9S_BOOL_UP ) {
-                    cmd_cur_.mode = MotionMode::kLocomotion;
-                }
-                else if ( QP_Locomotion_switch == AT9S_BOOL_DOWN ) {
-                    cmd_cur_.mode = MotionMode::kQpStand;
-                }
-                break;
-
-            case AT9S_TRI_DOWN:
-                cmd_cur_.mode = MotionMode::kPureDamper;
-                break;
-            }
-            break;
-        }
-
-        // Get gait id
-        if ( cmd_cur_.mode == MotionMode::kLocomotion ) {
-            switch ( right_select ) {
-            case AT9S_BOOL_UP:
-                switch ( left_select ) {
-                case AT9S_TRI_UP:
-                    // cmd_cur_.gait_id = GaitId::kTrot10v5;
-                    cmd_cur_.gait_id = GaitId::kTrotFast;
-                    break;
-                case AT9S_TRI_MIDDLE:
-                    cmd_cur_.gait_id = GaitId::kTrotMedium;
-                    // cmd_cur_.gait_id = GaitId::kStandNoPr;
-                    break;
-                case AT9S_TRI_DOWN:
-                    // cmd_cur_.gait_id = GaitId::kPassiveTrot;
-                    cmd_cur_.gait_id = GaitId::kTrotSlow;
-                    break;
-                }
-                break;
-            case AT9S_BOOL_DOWN:
-                switch ( left_select ) {
-                case AT9S_TRI_UP:
-                    cmd_cur_.gait_id = GaitId::kTrot24v16;
-                    // cmd_cur_.gait_id = GaitId::kTrot8v3;
-                    break;
-                case AT9S_TRI_MIDDLE:
-                    cmd_cur_.gait_id = GaitId::kBound;
-                    // cmd_cur_.gait_id = GaitId::kStand;
-                    break;
-                case AT9S_TRI_DOWN:
-                    cmd_cur_.gait_id = GaitId::kPronk;
-                    // cmd_cur_.gait_id = GaitId::kWalk;
-                    break;
-                }
-                break;
-            }
-        }
+    if (cmd_cur_.mode == MotionMode::kQpStand && std::fabs(keyboard_cmd_.xVel) > 0.01) {
+        cmd_cur_.mode = MotionMode::kLocomotion;
     }
 
-    // Get velocity & rpy cmd
-    if ( cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid ) {
-        //  unify scale of rc and ui
-        cmd_cur_.vel_des[ 0 ] = ApplyDeadband( 1. * rc_cmd_.right_stick_x, 0.1 );
-        cmd_cur_.vel_des[ 1 ] = ApplyDeadband( -1. * rc_cmd_.right_stick_y, 0.1 );
-        cmd_cur_.vel_des[ 2 ] = ApplyDeadband( -1. * rc_cmd_.left_stick_y, 0.1 );
+    // 默认gait逻辑
+    if (*gait_id == 0 && cmd_cur_.mode == MotionMode::kLocomotion) {
+        *gait_id = GaitId::kTrot10v5;
+    }
 
-        cmd_cur_.rpy_des[ 0 ]     = 0;
-        cmd_cur_.rpy_des[ 1 ]     = ApplyDeadband( 0.4 * rc_cmd_.left_stick_x, 0.1, -0.4, 0.4 );
-        cmd_cur_.rpy_des[ 2 ]     = 0;
-        cmd_cur_.pos_des[ 2 ]     = 0.3;
-        cmd_cur_.step_height[ 0 ] = step_height;
+    // 组装最终命令
+    cmd_cur_.gait_id    = *gait_id;
+    cmd_cur_.cmd_source = kKeyboardCmd;
 
-        // For factory speed offset calibration
-        if ( speed_offset_rc_flag_ ) {
-            if ( rc_cmd_.varB > 0 ) {  // Speed Offset
-                if ( rc_cmd_.varB < 0.5 )
-                    switch ( right_tri_switch ) {
-                    case T8S_TRI_UP:
-                        cmd_cur_.gait_id = GaitId::kBallet;
-                        break;
-                    case T8S_TRI_MIDDLE:
-                        cmd_cur_.gait_id = GaitId::kBound;
-                        break;
-                    case T8S_TRI_DOWN:
-                        cmd_cur_.gait_id = GaitId::kTrot24v16;
-                        break;
-                    default:
-                        break;
-                    }
-                cmd_cur_.vel_des[ 0 ]     = 0.1 * rc_cmd_.right_stick_x;
-                cmd_cur_.vel_des[ 1 ]     = -0.1 * rc_cmd_.right_stick_y;
-                cmd_cur_.vel_des[ 2 ]     = -0.1 * rc_cmd_.left_stick_y;  // Discard the calibration of the yaw speed
-                cmd_cur_.rpy_des[ 1 ]     = 0;
-                cmd_cur_.step_height[ 0 ] = 0.05;
-            }
-            else {  // Origin rpy and rpy gain Offset
-                cmd_cur_.vel_des[ 0 ] = ApplyDeadband( 1.6 * rc_cmd_.right_stick_x, 0.1 );
-                cmd_cur_.vel_des[ 1 ] = 0;
-                cmd_cur_.vel_des[ 2 ] = ApplyDeadband( -1.6 * rc_cmd_.right_stick_y, 0.1 );
-                cmd_cur_.rpy_des[ 0 ] = 0.1 * rc_cmd_.left_stick_y;  // roll
-                cmd_cur_.rpy_des[ 1 ] = 0.1 * rc_cmd_.left_stick_x;
-                cmd_cur_.rpy_des[ 2 ] = 0.05 * rc_cmd_.left_stick_x;
-                if ( rc_cmd_.varB < -0.5 ) {
-                    switch ( right_tri_switch ) {
-                    case T8S_TRI_UP:
-                        cmd_cur_.gait_id = GaitId::kBallet;
-                        break;
-                    case T8S_TRI_MIDDLE:
-                        cmd_cur_.gait_id = GaitId::kTrotSlow;
-                        break;
-                    default:
-                        cmd_cur_.gait_id = GaitId::kTrotMedium;
-                        break;
-                    }
-                }
-                else if ( right_tri_switch == T8S_TRI_UP ) {
-                    cmd_cur_.mode    = MotionMode::kMotion;
-                    cmd_cur_.gait_id = MotionId::kMotionPitchGainCalibration;
-                }
-                else
-                    cmd_cur_.gait_id = GaitId::kTrotFast;
-                // For pitch vel gain
-                cmd_cur_.step_height[ 0 ] = 0.05;
-            }
+    // 运动/位姿赋值
+    // 注意：如果是键盘，通常只有固定增量或简单的方向（比如WSAD控制）——此处简单映射
+    // 假设xVel、yVel、yawVel和roll/pitch/yawPos、heightPos在上层有处理、赋值
+    if (cmd_cur_.mode == MotionMode::kQpStand) {
+        // 姿态指令
+        cmd_cur_.vel_des[0] = 0;
+        cmd_cur_.vel_des[1] = 0;
+        cmd_cur_.vel_des[2] = 0;
+        cmd_cur_.rpy_des[0] = keyboard_cmd_.rollPos;
+        cmd_cur_.rpy_des[1] = keyboard_cmd_.pitchPos;
+        cmd_cur_.rpy_des[2] = keyboard_cmd_.yawPos;
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.32 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.contact = 0x0F;
+    }
+    else if (cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid) {
+        // 通常键盘的速度设置为步进或者离散值
+        cmd_cur_.vel_des[0] = keyboard_cmd_.xVel;
+        cmd_cur_.vel_des[1] = keyboard_cmd_.yVel;
+        cmd_cur_.vel_des[2] = keyboard_cmd_.yawVel;
+        cmd_cur_.rpy_des[0] = 0;
+        cmd_cur_.rpy_des[1] = 0;
+        cmd_cur_.rpy_des[2] = 0;
+        cmd_cur_.pos_des[2] = (robotType == RobotType::CYBERDOG2 ? 0.32 : 0.32) + keyboard_cmd_.heightPos;
+        cmd_cur_.step_height[0] = (robotType == RobotType::CYBERDOG2 ? 0.06 : 0.06);
+
+    }
+
+    // 清除命令队列逻辑
+    if (cmd_cur_.duration == 0) {
+        if (cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0) {
+            return;
+        }
+        else {
+            while(!cmd_list_.empty())
+                cmd_list_.pop();
         }
     }
-    else if ( cmd_cur_.mode == MotionMode::kQpStand ) {
-        cmd_cur_.rpy_des[ 0 ] = ApplyDeadband( 1. * rc_cmd_.left_stick_y, 0.1 );
-        cmd_cur_.rpy_des[ 1 ] = ApplyDeadband( 1. * rc_cmd_.left_stick_x, 0.1 );
-        cmd_cur_.rpy_des[ 2 ] = ApplyDeadband( -1. * rc_cmd_.right_stick_y, 0.1 );
+    interface_iter_ = 0;
+    cmd_list_.push(cmd_cur_);
+}
+
+void CommandInterface::Rc2Cmd(long int* control_mode, long int* gait_id, const RobotType& robotType)
+{
+    if ( rc_cmd_.L1 ) {
+        *control_mode = MotionMode::kRecoveryStand;
+    }
+    if ( rc_cmd_.L2 ) {
+        *control_mode = MotionMode::kPureDamper;
+    }
+    if ( rc_cmd_.R1 ) {
+        *control_mode = MotionMode::kLocomotion;
+    }
+    if ( rc_cmd_.R2 ) {
+        *control_mode = MotionMode::kQpStand;
+    }
+    if ( rc_cmd_.B1 ) {
+        *gait_id = GaitId::kTrot10v4;
+    }
+    if ( rc_cmd_.B2 ) {
+        *gait_id = GaitId::kTrotFast;
+    }
+    // default is trot
+    if ( *gait_id == 0 && *control_mode == MotionMode::kLocomotion )
+        *gait_id = GaitId::kTrot10v5;
+
+    cmd_cur_.mode       = *control_mode;
+    cmd_cur_.gait_id    = *gait_id;
+    cmd_cur_.cmd_source = kGamepadCmd;
+
+    if ( cmd_cur_.mode == MotionMode::kQpStand ) {  // QP stand
+        // rpy desired
+        // TODO: deadband
+        cmd_cur_.vel_des[ 0 ] = 0;
+        cmd_cur_.vel_des[ 1 ] = 0;
         cmd_cur_.vel_des[ 2 ] = 0;
-        if ( robotType == RobotType::CYBERDOG )
-            cmd_cur_.pos_des[ 2 ] = ApplyDeadband( 0.3 + 0.17 * rc_cmd_.right_stick_x, 0.05, 0.13, 0.47 );
+        cmd_cur_.rpy_des[ 0 ] = rc_cmd_.leftStickAnalog[ 0 ] * 0.6;   // roll
+        cmd_cur_.rpy_des[ 1 ] = rc_cmd_.leftStickAnalog[ 1 ] * 0.6;   // pitch
+        cmd_cur_.rpy_des[ 2 ] = rc_cmd_.rightStickAnalog[ 0 ] * 0.6;  // yaw
+        if ( cmd_cur_.gait_id == 1 || cmd_cur_.gait_id == 3 )
+            cmd_cur_.pos_des[ 2 ] = - 0.1 * rc_cmd_.rightStickAnalog[ 1 ];
         else
-            cmd_cur_.pos_des[ 2 ] = ApplyDeadband( 0.235 + 0.12 * rc_cmd_.right_stick_x, 0.05, 0.11, 0.3 );
+            cmd_cur_.pos_des[ 2 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 ) + 0.1 * rc_cmd_.rightStickAnalog[ 1 ];
+        cmd_cur_.contact = 0x0F;
     }
-    rc_cmd_old_ = rc_cmd_;
+    else if ( cmd_cur_.mode == MotionMode::kLocomotion || cmd_cur_.mode == MotionMode::kRlRapid ) {
+        // x,y, yaw velocity command
+        cmd_cur_.vel_des[ 0 ]     = rc_cmd_.leftStickAnalog[ 1 ];
+        cmd_cur_.vel_des[ 1 ]     = - rc_cmd_.leftStickAnalog[ 0 ];
+        cmd_cur_.vel_des[ 2 ]     = - rc_cmd_.rightStickAnalog[ 0 ];
+        cmd_cur_.rpy_des[ 0 ]     = 0;
+        cmd_cur_.rpy_des[ 2 ]     = 0;
+        // Locomotion 中，pitch不使用
+        // cmd_cur_.rpy_des[ 1 ]     = rc_cmd_.rightStickAnalog[ 1 ] * 0.4;
+        cmd_cur_.pos_des[ 2 ]     = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.24 : 0.32 );
+        cmd_cur_.step_height[ 0 ] = ( ( robotType == RobotType::CYBERDOG2 ) ? 0.04 : 0.06 );
+    }
 
     if ( cmd_cur_.duration == 0 ) {
         if ( cmd_cur_.mode == MotionMode::kMotion && motion_trigger_ > 0 ) {

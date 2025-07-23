@@ -5,12 +5,12 @@
 #include "controllers/state_estimator_container.hpp"
 #include "sim_utilities/imu_types.hpp"
 #include "parameters/robot_parameters.hpp"
-// #include "rt/rt_rc_interface.h"
 #include "controllers/leg_controller.hpp"
 #include "dynamics/quadruped.hpp"
 #include "command_interface/command_interface.hpp"
 
 #include "sim_utilities/visualization_data.hpp"
+#include "sim_utilities/wbc_test_data.hpp"
 #include "utilities/periodic_task.hpp"
 #include "command_interface/gamepad_command.hpp"
 #include "fsm_states/robot_current_state.hpp"
@@ -48,6 +48,7 @@ public:
     SpiCommand*             spi_command_;
     RobotControlParameters* control_parameters_;
     VisualizationData*      visualization_data_;
+    WbcTestData*            wbc_test_data_;
     Hotdog2Visualization*   hotdog2_main_visualization_;
     int8_t*                 bms_status_;
     int8_t*                 battery_soc_;
