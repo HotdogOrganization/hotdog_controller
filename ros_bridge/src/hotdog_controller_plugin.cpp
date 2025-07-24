@@ -609,8 +609,8 @@ void HotdogControllerPlugin::mainLoopThread()
       if (sim_mode_) {
         for (int i = 0; i < 4; ++i) {
           abad_effort[i] = 60 * (0 - motor_pos_[i*3+0]) + 1.5 * (0 - motor_vel_[i*3+0]) + spi_command.tau_abad_ff[i];
-          hip_effort[i] = 60 * (-1.2 - (-motor_pos_[i*3+1])) + 1.5 * (0 - (-motor_vel_[i*3+1])) + spi_command.tau_hip_ff[i];
-          knee_effort[i] = 60 * (2.5 - (-motor_pos_[i*3+2])) + 1.5 * (0 - (-motor_vel_[i*3+2])) + spi_command.tau_knee_ff[i];
+          hip_effort[i] = 60 * (1.2 - (motor_pos_[i*3+1])) + 1.5 * (0 - (motor_vel_[i*3+1])) + spi_command.tau_hip_ff[i];
+          knee_effort[i] = 60 * (-2.5 - (motor_pos_[i*3+2])) + 1.5 * (0 - (motor_vel_[i*3+2])) + spi_command.tau_knee_ff[i];
         }
       } else {
         for (int i = 0; i < 4; ++i) {
@@ -646,12 +646,12 @@ void HotdogControllerPlugin::mainLoopThread()
           abad_effort[i] = spi_command.kp_abad[i] * (spi_command.q_des_abad[i] - motor_pos_[i*3+0])
                         + spi_command.kd_abad[i] * (0 - motor_vel_[i*3+0])
                         + spi_command.tau_abad_ff[i];
-          hip_effort[i] = spi_command.kp_hip[i] * (spi_command.q_des_hip[i] - (-motor_pos_[i*3+1]))
-                        + spi_command.kd_hip[i] * (0 - (-motor_vel_[i*3+1]))
-                        + spi_command.tau_hip_ff[i];
-          knee_effort[i] = spi_command.kp_knee[i] * (spi_command.q_des_knee[i] - (-motor_pos_[i*3+2]))
-                        + spi_command.kd_knee[i] * (0 - (-motor_vel_[i*3+2]))
-                        + spi_command.tau_knee_ff[i];
+          hip_effort[i] = spi_command.kp_hip[i] * (-spi_command.q_des_hip[i] - (motor_pos_[i*3+1]))
+                        + spi_command.kd_hip[i] * (0 - (motor_vel_[i*3+1]))
+                        + -spi_command.tau_hip_ff[i];
+          knee_effort[i] = spi_command.kp_knee[i] * (-spi_command.q_des_knee[i] - (motor_pos_[i*3+2]))
+                        + spi_command.kd_knee[i] * (0 - (motor_vel_[i*3+2]))
+                        + -spi_command.tau_knee_ff[i];
         }
         publish_motor_status(*motor_status);
       }
@@ -684,8 +684,8 @@ void HotdogControllerPlugin::mainLoopThread()
 
   for (int i = 0; i < 4; ++i) {
     torque_[i * 3 + 0] = abad_effort[i];
-    torque_[i * 3 + 1] = -hip_effort[i];
-    torque_[i * 3 + 2] = -knee_effort[i];
+    torque_[i * 3 + 1] = hip_effort[i];
+    torque_[i * 3 + 2] = knee_effort[i];
   }
 
   // 更新 effort
