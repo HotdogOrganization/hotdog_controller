@@ -1,7 +1,6 @@
 #ifndef ORIENTATION_ESTIMATOR_HPP_
 #define ORIENTATION_ESTIMATOR_HPP_
 
-#include <lcm/lcm-cpp.hpp>
 #include <thread>
 
 #include "controllers/state_estimator_container.hpp"

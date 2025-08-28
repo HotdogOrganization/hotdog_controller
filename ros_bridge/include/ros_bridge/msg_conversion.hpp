@@ -97,6 +97,7 @@ static inline RcCommand ConvertToRcCommand(const sensor_msgs::msg::Joy& joy_msg)
   rc_command.R2 = joy_msg.buttons[3] > 0;  // R2
   rc_command.B1 = joy_msg.buttons[4] > 0;  // B1
   rc_command.B2 = joy_msg.buttons[5] > 0;  // B2
+  rc_command.LEVER = joy_msg.buttons[6];  // LEVEL
   rc_command.wheelAnalog = joy_msg.axes[4];  // Wheel analog
   rc_command.leftStickAnalog[0] = joy_msg.axes[3];
   rc_command.leftStickAnalog[1] = joy_msg.axes[2];

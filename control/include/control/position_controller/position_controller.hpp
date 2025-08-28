@@ -5,7 +5,6 @@
 #define EIGEN_NO_DEBUG
 #endif
 
-#include <lcm/lcm-cpp.hpp>
 
 #include "cpp_types.hpp"
 #include "fsm_states/control_fsm_data.hpp"

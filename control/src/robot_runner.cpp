@@ -4,10 +4,8 @@
 #include "ParamHandler.hpp"
 #include "control_flags.hpp"
 #include "dynamics/hotdog.hpp"
-#include "estimator/bat_estimator.hpp"
 #include "estimator/contact_estimator.hpp"
 #include "estimator/footforce_contact_estimator.hpp"
-#include "estimator/new_bat_estimator.hpp"
 #include "estimator/orientation_estimator.hpp"
 #include "estimator/position_velocity_estimator.hpp"
 // #include "estimator/absolute_position_velocity_estimator.hpp"
@@ -344,7 +342,6 @@ void RobotRunner::InitializeStateEstimator( bool cheaterMode ) {
     if ( cheaterMode ) {
         state_estimator_->AddEstimator< CheaterOrientationEstimator< float > >();
         state_estimator_->AddEstimator< CheaterPositionVelocityEstimator< float > >();
-        state_estimator_->AddEstimator< CheaterBatEstimator< float > >();
     }
     else {
         state_estimator_->AddEstimator< VectorNavOrientationEstimator< float > >();
@@ -356,10 +353,6 @@ void RobotRunner::InitializeStateEstimator( bool cheaterMode ) {
 #else
         state_estimator_->AddEstimator< LinearKFPositionVelocityEstimator< float > >();
 #endif
-        if ( robot_type_ == RobotType::CYBERDOG2 )
-            state_estimator_->AddEstimator< NewBatEstimator< float > >();
-        else
-            state_estimator_->AddEstimator< BatEstimator< float > >();
     }
     state_estimator_->AddEstimator< TerrainEstimator< float > >();
     state_estimator_->AddEstimator< FootForceContactEstimator< float > >();

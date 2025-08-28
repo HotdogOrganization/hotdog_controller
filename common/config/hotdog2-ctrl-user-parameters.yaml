@@ -11,7 +11,7 @@ jump_hind_knee         : [2, 0.5, 2.4, 2.1]
 # damping the joint when use mpc only
 
 mpc_body_inertia      : [0.07641, 0.17843, 0.197579]
-mpc_body_mass      : 22.954
+mpc_body_mass      : 18.24
 mpc_task_weight      : [1.25, 1.25, 20, 20, 20, 100, 0, 0, 0.3, 1.5, 1.5, 0.2]
 # mpc_task_weight      : [2.0, 2.0, 2.0, 20, 20, 300, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0] # for TV-MPC
 mpc_friction_coef          : 0.4
@@ -21,7 +21,7 @@ mpc_force_max       : 250.
 mpc_com_offset  : [0.0, 0.0, 0.0]
 
 mpc_only_joint_kd            : [0.2,  0.2,  0.2]
-mpc_only_swing_cartesian_kp  : [300., 300., 300.]
+mpc_only_swing_cartesian_kp  : [1300., 1300., 1300.]
 mpc_only_swing_cartesian_kd  : [15.,  15.,  15.]
 mpc_only_stance_cartesian_kp : [0.,   0.,   0.]
 mpc_only_stance_cartesian_kd : [14.,  14.,  14.]
@@ -35,7 +35,7 @@ mpc_use_bezier :  1
 
 use_wbc               : 1
 
-wbc_weight                : [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+wbc_weight                : [0.1, 0.1, 0.1, 0.1, 0.18, 0.18]
 wbc_weight_default        : [10, 10, 10, 10, 10, 10]
 wbc_weight_walk           : [400.0, 400.0, 400.0, 400.0, 400.0, 400.0]
 wbc_weight_passive_trot   : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
@@ -51,17 +51,27 @@ wbc_weight_jump           : [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
 wbc_weight_pace_stride    : [5.0, 5.0, 10.0, 10.0, 10.0, 200.0]
 wbc_weight_user_gait      : [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
-wbc_joint_kp          : [4, 4, 4]
-wbc_joint_kd          : [1, 0.2, 0.2]
+wbc_joint_kp          : [7.5, 7.5, 7.5]
+wbc_joint_kd          : [1.3, 0.4, 0.4]
 
-wbc_body_kp           : [300, 300, 300] # [100, 100, 100]
-wbc_body_kd           : [24, 24, 24] # [10, 10, 20]
+# wbc_body_kp           : [100, 200, 100] # [100, 100, 100]
+# wbc_body_kd           : [10, 20, 10] # [10, 10, 20]
 
-wbc_foot_kp           : [300, 300, 300] # [200, 200, 200] # [300, 300, 300] # [500, 500, 500]
+# wbc_foot_kp           : [700, 700, 700] # [200, 200, 200] # [300, 300, 300] # [500, 500, 500]
+# wbc_foot_kd           : [80, 80, 80] # [24, 24, 24] # [36, 36, 36] # [60, 60, 60]
+
+# wbc_orient_kp            : [100, 100, 100] # [100, 100, 100]
+# wbc_orient_kd            : [10, 10, 10] # [10, 10, 10]
+
+wbc_body_kp           : [400, 400, 400] # [100, 100, 100]
+wbc_body_kd           : [20, 20, 25] # [10, 10, 20]
+
+wbc_foot_kp           : [700, 700, 700] # [200, 200, 200] # [300, 300, 300] # [500, 500, 500]
 wbc_foot_kd           : [24, 24, 24] # [24, 24, 24] # [36, 36, 36] # [60, 60, 60]
 
-wbc_orient_kp            : [400, 400, 400] # [100, 100, 100]
-wbc_orient_kd            : [24, 24, 24] # [10, 10, 10]
+wbc_orient_kp            : [100, 100, 100] # [100, 100, 100]
+wbc_orient_kd            : [10, 10, 10] # [10, 10, 10]
+
 # reference trajectory of wbc
 wbc_use_mpc_traj        : 1
 wbc_use_mpc_traj_motion : 0
@@ -97,9 +107,9 @@ swing_p_gain          : [0.06, 0.05, 0.03] # [0.1, 0.09, 0.05]
 swing_p_gain_large    : [0.06, 0.05, 0.03] # [0.10, 0.05, 0.03]
 swing_p_gain_motion   : [0.06, 0.05, 0.03] #[0.15, 0.15, 0.03]
 swing_p_gain_follow   : [0.30, 0.05, 0.03]
-foot_final_height     : -0.005
+foot_final_height     : -0.0
 
-des_roll_pitch_height        : [0.0, 0, 0.25]
+des_roll_pitch_height        : [0.0, 0, 0.30]
 des_roll_pitch_height_motion : [0.0, 0, 0.225]
 des_roll_pitch_height_stair  : [0.0, 0, 0.225]
 des_vel : [0.0, 0.0, 0.0]
@@ -216,7 +226,7 @@ x_offset_pronk      : -0.0 # -0.05
 x_offset_bound      : [0.05, 0.05, 0.02, 0.02]
 x_offset_default    : [0.0, 0.0, 0.0, 0.0]
 x_offset_trot_10_4  : [-0.02, -0.02, -0.02, -0.02] # [0.0, 0.0, 0.0, 0.0]
-y_offset_trot_10_4  : [0.025, -0.035, 0.025, -0.035] # [0.03, -0.03, 0.03, -0.03]
+y_offset_trot_10_4  : [0.045, -0.035, 0.045, -0.035] # [0.03, -0.03, 0.03, -0.03]
 y_offset_trot       : [0.04, -0.04, 0.04, -0.04]
 x_offset_pronk_rl   : -0.15
 y_offset_pronk_rl   : 0.05

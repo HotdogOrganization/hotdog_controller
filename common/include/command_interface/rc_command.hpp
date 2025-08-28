@@ -23,6 +23,7 @@ struct RcCommand {
     float wheelAnalog;
     bool L1, L2, R1, R2, B1, B2;
 
+    uint8_t LEVER;
 
     /**
      * @brief Set all values to zero
@@ -33,6 +34,7 @@ struct RcCommand {
         rightStickAnalog.setZero();
         wheelAnalog = 0.0f;
         L1 = L2 = R1 = R2 = B1 = B2 = false;
+        LEVER = 0;
     }
 
     /**
@@ -50,6 +52,7 @@ struct RcCommand {
         result += "R2: " + BoolToString(R2) + "\n";
         result += "B1: " + BoolToString(B1) + "\n";
         result += "B2: " + BoolToString(B2) + "\n";
+        result += "LEVER: " + BoolToString(LEVER) + "\n";
         return result;
     }
 };

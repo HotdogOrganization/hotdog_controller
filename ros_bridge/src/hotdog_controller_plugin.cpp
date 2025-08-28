@@ -622,21 +622,22 @@ void HotdogControllerPlugin::mainLoopThread()
         // 这里你原本是直接赋 spi_command 的参数，这里建议做成 for 循环，简化代码
         for (int i = 0; i < 4; ++i) {
           temp_spi_command.q_des_abad[i] = 0;
-          temp_spi_command.q_des_hip[i] = -1.2;
-          temp_spi_command.q_des_knee[i] = 2.5;
+          temp_spi_command.q_des_hip[i] = 0;
+          temp_spi_command.q_des_knee[i] = 0;
           temp_spi_command.qd_des_abad[i] = 0;
           temp_spi_command.qd_des_hip[i] = 0;
           temp_spi_command.qd_des_knee[i] = 0;
-          temp_spi_command.kp_abad[i] = 5;
-          temp_spi_command.kp_hip[i] = 5;
-          temp_spi_command.kp_knee[i] = 5;
-          temp_spi_command.kd_abad[i] = 0.1;
-          temp_spi_command.kd_hip[i] = 0.1;
-          temp_spi_command.kd_knee[i] = 0.1;
+          temp_spi_command.kp_abad[i] = 0;
+          temp_spi_command.kp_hip[i] = 0;
+          temp_spi_command.kp_knee[i] = 0;
+          temp_spi_command.kd_abad[i] = 0;
+          temp_spi_command.kd_hip[i] = 0;
+          temp_spi_command.kd_knee[i] = 0;
           temp_spi_command.tau_abad_ff[i] = 0;
           temp_spi_command.tau_hip_ff[i] = 0;
           temp_spi_command.tau_knee_ff[i] = 0;
         }
+        publish_motor_command(temp_spi_command);
       }
       count++;
     } else {
