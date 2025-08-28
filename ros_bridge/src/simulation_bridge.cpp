@@ -177,9 +177,20 @@ void SimulationBridge::RunRobotControl()
   }
 
   if (rc_command_) {
-    cmd_interface_.ProcessRcCommand(*rc_command_);
+      if (rc_command_->LEVER == 0 && keyboard_command_){
+        cmd_interface_.ProcessKeyboardCommand(*keyboard_command_);    
+      }
+      else if(rc_command_->LEVER != 0) {
+        cmd_interface_.ProcessRcCommand(*rc_command_);
+      }
+
   } else if (gamepad_command_) {
-    cmd_interface_.ProcessGamepadCommand(*gamepad_command_);
+      if (!gamepad_command_->leftBumper && keyboard_command_){
+        cmd_interface_.ProcessKeyboardCommand(*keyboard_command_);
+      }
+      else if(gamepad_command_->leftBumper) {
+        cmd_interface_.ProcessGamepadCommand(*gamepad_command_);
+      }
   } else if (keyboard_command_) {
     cmd_interface_.ProcessKeyboardCommand(*keyboard_command_);
   }

@@ -141,7 +141,7 @@ def launch_setup(context, *args, **kwargs):
                             joint_state_broadcaster_spawner,
                             imu_sensor_broadcaster_spawner,
                             tittai_controller_spawner,
-                            # rviz_node,
+                            rviz_node,
                         ],
                     ),
                 )

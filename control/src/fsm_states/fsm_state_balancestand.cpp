@@ -333,6 +333,15 @@ template < typename T > void FsmStateBalanceStand< T >::BalanceStandStep() {
         first_torctrlposture_      = true;
         this->motion_progress_bar_ = 100;
         wbc_ctrl_->Run( wbc_data_, *this->data_ );
+
+        // body_weight_ = this->data_->wbc_test_data->Fr[2] + this->data_->wbc_test_data->Fr[5] +
+        //                this->data_->wbc_test_data->Fr[8] + this->data_->wbc_test_data->Fr[11];
+        // std::cout << "Body weight is: " << body_weight_ << std::endl;
+        // for ( size_t i( 0 ); i < 4; ++i ) {
+        //     wbc_data_->reaction_force_des[ i ].setZero();
+        //     wbc_data_->reaction_force_des[ i ][ 2 ] = body_weight_ / 4.;
+        // }
+
     }
     // Incremental force control attitude
     else if ( cmd->gait_id == 3 || cmd->gait_id == 1 ) {
@@ -553,11 +562,11 @@ template < typename T > void FsmStateBalanceStand< T >::RpyCmdRescale( const T& 
     if ( robot_type != RobotType::CYBERDOG2 )
         return;
     float rpy_lim_des_damp = 1.0;
-    if ( body_height_lim_des < 0.26 && body_height_lim_des > 0.15 ) {
-        if ( body_height_lim_des > 0.235 && body_height_lim_des < 0.26 )
-            rpy_lim_des_damp = ( 0.26 - body_height_lim_des ) / 0.025;
-        else if ( body_height_lim_des > 0.15 && body_height_lim_des < 0.18 )
-            rpy_lim_des_damp = ( body_height_lim_des - 0.15 ) / 0.03;
+    if ( body_height_lim_des < 0.34 && body_height_lim_des > 0.20 ) {
+        if ( body_height_lim_des > 0.235 && body_height_lim_des < 0.34 )
+            rpy_lim_des_damp = ( 0.34 - body_height_lim_des ) / 0.025;
+        else if ( body_height_lim_des > 0.20 && body_height_lim_des < 0.18 )
+            rpy_lim_des_damp = ( body_height_lim_des - 0.20 ) / 0.03;
         else
             rpy_lim_des_damp = 1.0;
     }

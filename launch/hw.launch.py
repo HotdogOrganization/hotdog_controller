@@ -147,7 +147,7 @@ def generate_launch_description():
         # canfd_router_node,
         # start_controller,
         tita_controller_spawner,
-        command_launch,
+        # command_launch,
         hw_broadcaster
     ]
 
