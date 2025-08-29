@@ -2,6 +2,7 @@
 import os
 import xacro
 import launch
+import yaml
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -18,6 +19,61 @@ robot_name = "hotdog"
 
 def launch_setup(context, *args, **kwargs):
     nn = LaunchConfiguration("namespace").perform(context)
+    sim_mode_value = LaunchConfiguration("sim_mode").perform(context)
+    
+    # 将字符串转换为布尔值
+    sim_mode_bool = sim_mode_value.lower() == 'true'
+
+    # 查找配置文件路径
+    config_file_path = os.path.join(
+        get_package_share_directory("hotdog_controller"),
+        "config",
+        "hotdog_ros2_controllers.yaml"
+    )
+    
+    # 读取并修改配置文件
+    temp_config_path = '/tmp/hotdog_controllers_temp.yaml'
+    try:
+        with open(config_file_path, 'r') as file:
+            config_data = yaml.safe_load(file)
+        
+        # 确保配置结构正确
+        if config_data is None:
+            config_data = {}
+            
+        if '/**' not in config_data:
+            config_data['/**'] = {}
+            
+        if 'hotdog_controller' not in config_data['/**']:
+            config_data['/**']['hotdog_controller'] = {}
+            
+        if 'ros__parameters' not in config_data['/**']['hotdog_controller']:
+            config_data['/**']['hotdog_controller']['ros__parameters'] = {}
+        
+        # 设置sim_mode参数
+        config_data['/**']['hotdog_controller']['ros__parameters']['sim_mode'] = sim_mode_bool
+        
+        # 创建临时配置文件
+        with open(temp_config_path, 'w') as file:
+            yaml.dump(config_data, file, default_flow_style=False)
+            
+    except FileNotFoundError:
+        # 创建基本配置文件
+        config_data = {
+            '/**': {
+                'hotdog_controller': {
+                    'ros__parameters': {
+                        'sim_mode': sim_mode_bool
+                    }
+                }
+            }
+        }
+        with open(temp_config_path, 'w') as file:
+            yaml.dump(config_data, file, default_flow_style=False)
+        
+    except Exception as e:
+        print(f"Error processing config file: {e}")
+        return []
 
     # Get world file path
     world_file = os.path.join(
@@ -93,6 +149,7 @@ def launch_setup(context, *args, **kwargs):
             "joint_state_broadcaster",
             "--controller-manager",
             nn + "/controller_manager",
+            "--param-file", temp_config_path,
         ],
     )
 
@@ -103,6 +160,7 @@ def launch_setup(context, *args, **kwargs):
             "imu_sensor_broadcaster",
             "--controller-manager",
             nn + "/controller_manager",
+            "--param-file", temp_config_path,
         ],
     )
     wbc_controller = Node(
@@ -112,6 +170,7 @@ def launch_setup(context, *args, **kwargs):
             "hotdog_controller",
             "--controller-manager",
             nn + "/controller_manager",
+            "--param-file", temp_config_path,
         ],
     )
     nodes = [
@@ -130,12 +189,22 @@ def generate_launch_description():
     declared_arguments = []
 
     declared_arguments.append(
-    launch.actions.DeclareLaunchArgument(
-        "namespace",
-        default_value="",
-        description="name space",
+        launch.actions.DeclareLaunchArgument(
+            "namespace",
+            default_value="",
+            description="name space",
         )
     )
+    
+    # 添加sim_mode参数
+    declared_arguments.append(
+        launch.actions.DeclareLaunchArgument(
+            "sim_mode",
+            default_value="true",
+            description="Enable simulation mode for hotdog_controller",
+        )
+    )
+    
     return LaunchDescription(
         declared_arguments + [OpaqueFunction(function=launch_setup)]
     )
